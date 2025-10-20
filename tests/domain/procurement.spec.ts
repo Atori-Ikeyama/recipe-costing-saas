@@ -20,8 +20,6 @@ describe('Procurement calculator', () => {
       stockUnit: getUnit('g'),
       conversion: createConversion('kg', 'g', 1000),
       purchasePrice: Money.ofMinor(980),
-      taxIncluded: true,
-      taxRatePercent: 10,
       yieldRatePercent: 90,
       supplierId: 1,
       version: 1,
@@ -35,8 +33,6 @@ describe('Procurement calculator', () => {
       stockUnit: getUnit('g'),
       conversion: createConversion('kg', 'g', 1000),
       purchasePrice: Money.ofMinor(198),
-      taxIncluded: true,
-      taxRatePercent: 10,
       yieldRatePercent: 92,
       supplierId: 1,
       version: 1,
@@ -79,13 +75,13 @@ describe('Procurement calculator', () => {
     );
 
     expect(chickenSummary?.requiredPurchaseUnits).toBe(4);
-    expect(chickenSummary?.estimatedAmountMinor).toBe(3564);
+    expect(chickenSummary?.estimatedAmountMinor).toBe(3920);
     expect(chickenSummary?.stockQuantity.value).toBeCloseTo(3711.34, 2);
 
     expect(onionSummary?.requiredPurchaseUnits).toBe(2);
-    expect(onionSummary?.estimatedAmountMinor).toBe(360);
+    expect(onionSummary?.estimatedAmountMinor).toBe(396);
     expect(onionSummary?.stockQuantity.value).toBeCloseTo(1530.61, 2);
 
-    expect(result.totalCostMinor).toBe(3924);
+    expect(result.totalCostMinor).toBe(4316);
   });
 });

@@ -1,4 +1,4 @@
-import { Ingredient, purchasePriceExcludingTax } from '../catalog/ingredient';
+import { Ingredient } from '../catalog/ingredient';
 import { Recipe, RecipeItem, servingsPerBatch } from '../recipe/recipe';
 import { Money, RoundingPolicy, roundHalfUp } from '../shared/money';
 import {
@@ -18,7 +18,7 @@ export const defaultCostingPolicy: CostingPolicy = {
 };
 
 export interface EffectiveUnitCostInput {
-  purchasePriceExcl: Money;
+  purchasePrice: Money;
   purchaseQty: Quantity;
   conversion: Conversion;
   yieldRatePercent: number;
@@ -36,7 +36,7 @@ export interface RecipeCostResult {
 }
 
 export function effectiveUnitCost({
-  purchasePriceExcl,
+  purchasePrice,
   purchaseQty,
   conversion,
   yieldRatePercent,
@@ -46,7 +46,7 @@ export function effectiveUnitCost({
   }
 
   const stockQuantity = applyConversion(purchaseQty, conversion);
-  const base = purchasePriceExcl.amountMinor / stockQuantity.value;
+  const base = purchasePrice.amountMinor / stockQuantity.value;
   return base / (yieldRatePercent / 100);
 }
 
@@ -67,9 +67,8 @@ export function recipeUnitCost(
 
   for (const item of recipe.items) {
     const ingredient = lookupIngredient(ingredients, item.ingredientId);
-    const purchasePriceExcl = purchasePriceExcludingTax(ingredient, round);
     const unitCost = effectiveUnitCost({
-      purchasePriceExcl,
+      purchasePrice: ingredient.purchasePrice,
       purchaseQty: ingredient.purchaseQuantity,
       conversion: ingredient.conversion,
       yieldRatePercent: ingredient.yieldRatePercent,

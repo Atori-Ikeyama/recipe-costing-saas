@@ -22,8 +22,6 @@ const registerSchema = z.object({
   purchaseUnit: unitCodeSchema,
   purchaseQty: z.coerce.number().pipe(positiveNumberSchema),
   purchasePriceMinor: z.coerce.number().pipe(moneyMinorSchema),
-  taxIncluded: z.coerce.boolean(),
-  taxRatePercent: z.coerce.number().pipe(percentageSchema),
   stockUnit: unitCodeSchema,
   convPurchaseToStock: z.coerce.number().pipe(positiveNumberSchema),
   yieldRatePercent: z.coerce.number().pipe(
@@ -51,8 +49,6 @@ export async function registerIngredient(input: RegisterIngredientInput) {
     stockUnit,
     conversion: createConversion(purchaseUnit, stockUnit, data.convPurchaseToStock),
     purchasePrice: Money.ofMinor(data.purchasePriceMinor),
-    taxIncluded: data.taxIncluded,
-    taxRatePercent: data.taxRatePercent,
     yieldRatePercent: data.yieldRatePercent,
     supplierId: data.supplierId,
     version: 1,

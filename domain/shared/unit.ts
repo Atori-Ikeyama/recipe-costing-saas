@@ -30,6 +30,7 @@ const UNIT_REGISTRY = new Map<string, UnitDefinition>([
   ['l', { code: 'l', cat: 'volume', ratioToBase: 1000 }],
   ['ea', { code: 'ea', cat: 'count', ratioToBase: 1 }],
   ['pc', { code: 'pc', cat: 'count', ratioToBase: 1 }],
+  ['meal', { code: 'meal', cat: 'count', ratioToBase: 1 }],
 ]);
 
 export function registerUnit(definition: UnitDefinition): void {

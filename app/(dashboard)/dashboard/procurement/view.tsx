@@ -4,6 +4,7 @@ import * as React from 'react';
 import { FileDown, PlusCircle, Trash2 } from 'lucide-react';
 
 import type { RecipeResponse } from '@/application/recipes/presenter';
+import type { IngredientResponse } from '@/application/ingredients/presenter';
 import { calculateProcurementAction } from './actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +28,7 @@ import { toCsv } from '@/lib/csv';
 
 interface ProcurementDashboardProps {
   recipes: RecipeResponse[];
+  ingredients: IngredientResponse[];
 }
 
 interface PlanItem {
@@ -34,7 +36,20 @@ interface PlanItem {
   servings: number;
 }
 
-export function ProcurementDashboard({ recipes }: ProcurementDashboardProps) {
+interface ProcurementTableItem {
+  ingredientId: number;
+  ingredientName: string;
+  stockQuantityValue: number;
+  stockUnitCode: string;
+  theoreticalPurchaseQuantityValue: number | null;
+  roundedPurchaseQuantityValue: number | null;
+  purchaseUnitCode: string | null;
+  purchaseUnitQtyValue: number | null;
+  requiredPurchaseUnits: number;
+  estimatedAmountMinor: number;
+}
+
+export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashboardProps) {
   const [items, setItems] = React.useState<PlanItem[]>(
     recipes.length > 0
       ? [{ recipeId: recipes[0]!.id, servings: 10 }]
@@ -45,6 +60,10 @@ export function ProcurementDashboard({ recipes }: ProcurementDashboardProps) {
   >(null);
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const ingredientMap = React.useMemo(
+    () => new Map(ingredients.map((ingredient) => [ingredient.id, ingredient])),
+    [ingredients],
+  );
 
   const handleAdd = React.useCallback(() => {
     if (recipes.length === 0) {
@@ -100,27 +119,76 @@ export function ProcurementDashboard({ recipes }: ProcurementDashboardProps) {
     }
   }, [items]);
 
-  const handleExportCsv = React.useCallback(() => {
+  const tableItems = React.useMemo<ProcurementTableItem[]>(() => {
     if (!result) {
+      return [];
+    }
+
+    return result.items.map((item) => {
+      const ingredient = ingredientMap.get(item.ingredientId);
+      const stockUnitCode = ingredient?.stockUnit ?? item.stockUnit ?? '';
+      const purchaseUnitCode = ingredient?.purchaseUnit ?? item.purchaseUnit ?? null;
+      const conversionFactor =
+        ingredient?.convPurchaseToStock && ingredient.convPurchaseToStock > 0
+          ? ingredient.convPurchaseToStock
+          : null;
+
+      const theoreticalPurchaseQuantityValue =
+        conversionFactor && conversionFactor > 0
+          ? item.totalStockQty / conversionFactor
+          : null;
+
+      const purchaseUnitQtyValue =
+        ingredient?.purchaseQty ??
+        (item.requiredPurchaseUnits > 0
+          ? item.purchaseQty / item.requiredPurchaseUnits
+          : null);
+
+      const roundedPurchaseQuantityValue =
+        purchaseUnitQtyValue !== null
+          ? purchaseUnitQtyValue * item.requiredPurchaseUnits
+          : item.purchaseQty;
+
+      return {
+        ingredientId: item.ingredientId,
+        ingredientName: ingredient?.name ?? `材料 ${item.ingredientId}`,
+        stockQuantityValue: item.totalStockQty,
+        stockUnitCode,
+        theoreticalPurchaseQuantityValue,
+        roundedPurchaseQuantityValue,
+        purchaseUnitCode,
+        purchaseUnitQtyValue,
+        requiredPurchaseUnits: item.requiredPurchaseUnits,
+        estimatedAmountMinor: item.estimatedAmountMinor,
+      };
+    });
+  }, [result, ingredientMap]);
+
+  const handleExportCsv = React.useCallback(() => {
+    if (tableItems.length === 0) {
       return;
     }
 
-    const rows = result.items.map((item) => ({
+    const rows = tableItems.map((item) => ({
       ingredientId: item.ingredientId,
-      stockUnit: item.stockQuantity.unit.code,
-      totalStockQty: item.stockQuantity.value,
-      purchaseUnit: item.purchaseQuantity.unit.code,
-      purchaseQty: item.purchaseQuantity.value,
+      ingredientName: item.ingredientName,
+      stockUnit: item.stockUnitCode,
+      totalStockQty: item.stockQuantityValue,
+      purchaseUnit: item.purchaseUnitCode ?? '',
+      theoreticalPurchaseQty: item.theoreticalPurchaseQuantityValue ?? '',
+      roundedPurchaseQty: item.roundedPurchaseQuantityValue ?? '',
       requiredPurchaseUnits: item.requiredPurchaseUnits,
       estimatedAmountMinor: item.estimatedAmountMinor,
     }));
 
     const csv = toCsv(rows, [
       'ingredientId',
+      'ingredientName',
       'stockUnit',
       'totalStockQty',
+      'theoreticalPurchaseQty',
       'purchaseUnit',
-      'purchaseQty',
+      'roundedPurchaseQty',
       'requiredPurchaseUnits',
       'estimatedAmountMinor',
     ]);
@@ -137,7 +205,16 @@ export function ProcurementDashboard({ recipes }: ProcurementDashboardProps) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }, [result]);
+  }, [tableItems]);
+
+  const formatQuantity = React.useCallback(
+    (value: number) =>
+      new Intl.NumberFormat('ja-JP', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(value),
+    [],
+  );
 
   return (
     <div className="space-y-6">
@@ -260,35 +337,79 @@ export function ProcurementDashboard({ recipes }: ProcurementDashboardProps) {
           <CardContent>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>材料ID</TableHead>
+              <TableRow>
+                  <TableHead>材料</TableHead>
                   <TableHead>必要在庫量</TableHead>
-                  <TableHead>発注単位あたり</TableHead>
-                  <TableHead>必要発注数</TableHead>
+                  <TableHead>発注総量</TableHead>
+                  <TableHead>発注単位数</TableHead>
                   <TableHead className="text-right">推定金額</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {result.items.map((item) => (
-                  <TableRow key={item.ingredientId}>
-                    <TableCell>{item.ingredientId}</TableCell>
-                    <TableCell>
-                      {item.stockQuantity.value.toFixed(2)}{' '}
-                      {item.stockQuantity.unit.code}
-                    </TableCell>
-                    <TableCell>
-                      {item.purchaseQuantity.value.toFixed(2)}{' '}
-                      {item.purchaseQuantity.unit.code}
-                    </TableCell>
-                    <TableCell>{item.requiredPurchaseUnits}</TableCell>
-                    <TableCell className="text-right">
-                      ¥{item.estimatedAmountMinor.toLocaleString()}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {tableItems.map((item) => {
+                  const ingredient = ingredientMap.get(item.ingredientId);
+                  const purchasePerUnit =
+                    item.purchaseUnitQtyValue !== null && item.purchaseUnitCode
+                      ? `${formatQuantity(item.purchaseUnitQtyValue)} ${item.purchaseUnitCode}`
+                      : item.purchaseUnitCode
+                        ? `${item.purchaseUnitCode} 単位`
+                        : null;
+                  const showRoundedAdjustment =
+                    item.theoreticalPurchaseQuantityValue !== null &&
+                    item.roundedPurchaseQuantityValue !== null &&
+                    Math.abs(
+                      item.roundedPurchaseQuantityValue - item.theoreticalPurchaseQuantityValue,
+                    ) > 1e-6;
+
+                  return (
+                    <TableRow key={`ingredient-${item.ingredientId}`}>
+                      <TableCell>
+                        <div className="font-medium">
+                          {ingredient?.name ?? item.ingredientName}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {purchasePerUnit
+                            ? `仕入単位: ${purchasePerUnit}`
+                            : '仕入単位情報なし'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {formatQuantity(item.stockQuantityValue)} {item.stockUnitCode}
+                      </TableCell>
+                      <TableCell>
+                        {item.theoreticalPurchaseQuantityValue !== null &&
+                        item.purchaseUnitCode ? (
+                          <>
+                            {formatQuantity(item.theoreticalPurchaseQuantityValue)}{' '}
+                            {item.purchaseUnitCode}
+                            {showRoundedAdjustment && item.purchaseUnitCode ? (
+                              <div className="text-xs text-muted-foreground">
+                                切上後:{' '}
+                                {formatQuantity(item.roundedPurchaseQuantityValue ?? 0)}{' '}
+                                {item.purchaseUnitCode}
+                              </div>
+                            ) : null}
+                          </>
+                        ) : item.roundedPurchaseQuantityValue !== null &&
+                          item.purchaseUnitCode ? (
+                          <>
+                            {formatQuantity(item.roundedPurchaseQuantityValue)}{' '}
+                            {item.purchaseUnitCode}
+                          </>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell>{item.requiredPurchaseUnits}</TableCell>
+                      <TableCell className="text-right">
+                        ¥{item.estimatedAmountMinor.toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
               <TableCaption>
-                在庫量は廃棄率を加味した必要量を表示しています。
+                在庫必要量は廃棄率を加味したストック単位、発注総量は仕入単位換算の理論値、発注単位数は切り上げ後の注文ケース数です。
               </TableCaption>
             </Table>
           </CardContent>

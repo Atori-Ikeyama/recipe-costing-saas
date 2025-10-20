@@ -1,13 +1,4 @@
-import {
-  pgTable,
-  serial,
-  varchar,
-  integer,
-  boolean,
-  numeric,
-  timestamp,
-  check,
-} from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, integer, numeric, timestamp, check } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
 import { teams } from '../base-schema';
@@ -24,8 +15,6 @@ export const ingredients = pgTable(
     purchaseUnit: varchar('purchase_unit', { length: 24 }).notNull(),
     purchaseQty: numeric('purchase_qty', { precision: 12, scale: 3 }).notNull(),
     purchasePriceMinor: integer('purchase_price_minor').notNull(),
-    taxIncluded: boolean('tax_included').notNull().default(false),
-    taxRate: numeric('tax_rate', { precision: 5, scale: 2 }).notNull(),
     stockUnit: varchar('stock_unit', { length: 24 }).notNull(),
     convPurchaseToStock: numeric('conv_p_to_s', {
       precision: 12,

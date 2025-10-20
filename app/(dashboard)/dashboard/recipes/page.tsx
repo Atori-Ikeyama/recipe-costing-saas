@@ -1,13 +1,8 @@
-import Link from 'next/link';
+import Link from "next/link";
 
-import { listRecipes } from '@/application/recipes';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from '@/components/ui/card';
+import { listRecipes } from "@/application/recipes";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableHeader,
@@ -16,7 +11,9 @@ import {
   TableHead,
   TableCell,
   TableCaption,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
+
+const formatUnit = (unit: string) => (unit === "meal" ? "食" : unit);
 
 export default async function RecipesPage() {
   const recipes = await listRecipes();
@@ -39,8 +36,7 @@ export default async function RecipesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>名前</TableHead>
-                <TableHead>仕上がり量</TableHead>
-                <TableHead>提供量</TableHead>
+                <TableHead>仕上がり食数</TableHead>
                 <TableHead>更新バージョン</TableHead>
                 <TableHead />
               </TableRow>
@@ -51,10 +47,8 @@ export default async function RecipesPage() {
                   <TableRow key={recipe.id}>
                     <TableCell className="font-medium">{recipe.name}</TableCell>
                     <TableCell>
-                      {recipe.batchOutputQty} {recipe.batchOutputUnit}
-                    </TableCell>
-                    <TableCell>
-                      {recipe.servingSizeQty} {recipe.servingSizeUnit}
+                      {recipe.batchOutputQty}{" "}
+                      {formatUnit(recipe.batchOutputUnit)}
                     </TableCell>
                     <TableCell>v{recipe.version}</TableCell>
                     <TableCell className="text-right">
@@ -69,13 +63,16 @@ export default async function RecipesPage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    レシピがまだありません。<br />
+                    レシピがまだありません。
+                    <br />
                     新規作成から登録を始めましょう。
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
-            <TableCaption>レシピは提供数やコスト計算の基礎になります。</TableCaption>
+            <TableCaption>
+              レシピは提供数やコスト計算の基礎になります。
+            </TableCaption>
           </Table>
         </CardContent>
       </Card>

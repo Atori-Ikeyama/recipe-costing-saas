@@ -5,23 +5,18 @@ import { revalidatePath } from 'next/cache';
 import {
   registerIngredient,
   updateIngredientPricing,
+  deleteIngredient,
 } from '@/application/ingredients';
 import type {
   RegisterIngredientInput,
   UpdateIngredientInput,
 } from '@/application/ingredients/register';
+import type { DeleteIngredientInput } from '@/application/ingredients/delete';
 
 type ActionState = {
   error?: string;
   success?: string;
 };
-
-function normalizeBoolean(value: FormDataEntryValue | null): boolean {
-  if (typeof value === 'string') {
-    return value === 'true' || value === 'on';
-  }
-  return Boolean(value);
-}
 
 function toNumber(value: FormDataEntryValue | null): number {
   if (value === null || value === undefined || value === '') {
@@ -44,14 +39,13 @@ export async function createIngredientAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
+    const stockUnitInput = formData.get('stockUnit') ?? 'g';
     const payload: RegisterIngredientInput = {
       name: String(formData.get('name') ?? ''),
       purchaseUnit: String(formData.get('purchaseUnit') ?? ''),
       purchaseQty: toNumber(formData.get('purchaseQty')),
       purchasePriceMinor: toNumber(formData.get('purchasePriceMinor')),
-      taxIncluded: normalizeBoolean(formData.get('taxIncluded')),
-      taxRatePercent: toNumber(formData.get('taxRatePercent')),
-      stockUnit: String(formData.get('stockUnit') ?? ''),
+      stockUnit: String(stockUnitInput || 'g'),
       convPurchaseToStock: toNumber(formData.get('convPurchaseToStock')),
       yieldRatePercent: toNumber(formData.get('yieldRatePercent')),
       supplierId: toOptionalNumber(formData.get('supplierId')),
@@ -74,6 +68,7 @@ export async function updateIngredientAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
+    const stockUnitInput = formData.get('stockUnit') ?? 'g';
     const payload: UpdateIngredientInput = {
       id: toNumber(formData.get('id')),
       version: toNumber(formData.get('version')),
@@ -81,9 +76,7 @@ export async function updateIngredientAction(
       purchaseUnit: String(formData.get('purchaseUnit') ?? ''),
       purchaseQty: toNumber(formData.get('purchaseQty')),
       purchasePriceMinor: toNumber(formData.get('purchasePriceMinor')),
-      taxIncluded: normalizeBoolean(formData.get('taxIncluded')),
-      taxRatePercent: toNumber(formData.get('taxRatePercent')),
-      stockUnit: String(formData.get('stockUnit') ?? ''),
+      stockUnit: String(stockUnitInput || 'g'),
       convPurchaseToStock: toNumber(formData.get('convPurchaseToStock')),
       yieldRatePercent: toNumber(formData.get('yieldRatePercent')),
       supplierId: toOptionalNumber(formData.get('supplierId')),
@@ -97,6 +90,36 @@ export async function updateIngredientAction(
     console.error('updateIngredientAction failed', error);
     return {
       error: error instanceof Error ? error.message : '材料の更新に失敗しました',
+    };
+  }
+}
+
+export async function deleteIngredientAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    const payload: DeleteIngredientInput = {
+      id: toNumber(formData.get('id')),
+      version: toNumber(formData.get('version')),
+    };
+
+    await deleteIngredient(payload);
+    revalidatePath('/dashboard/ingredients');
+    return { success: '材料を削除しました' };
+  } catch (error) {
+    console.error('deleteIngredientAction failed', error);
+    const dbCode =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? (error as { code?: string }).code
+        : undefined;
+    return {
+      error:
+        dbCode === '23503'
+          ? 'レシピで使用されている材料は削除できません。先にレシピから除外してください。'
+          : error instanceof Error
+            ? error.message
+            : '材料の削除に失敗しました',
     };
   }
 }

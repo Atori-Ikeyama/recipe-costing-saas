@@ -1,20 +1,15 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useActionState } from 'react';
-import { Trash2, PlusCircle } from 'lucide-react';
+import * as React from "react";
+import { useActionState } from "react";
+import { Trash2, PlusCircle } from "lucide-react";
 
-import type { IngredientResponse } from '@/application/ingredients/presenter';
-import { createRecipeAction } from '../actions';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import type { IngredientResponse } from "@/application/ingredients/presenter";
+import { createRecipeAction } from "../actions";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type ActionState = {
   error?: string;
@@ -39,7 +34,7 @@ function createDefaultItem(ingredients: IngredientResponse[]): DraftItem {
     return {
       ingredientId: 0,
       quantity: 1,
-      unit: 'g',
+      unit: "g",
       wasteRate: 0,
     };
   }
@@ -55,11 +50,11 @@ function createDefaultItem(ingredients: IngredientResponse[]): DraftItem {
 
 export function RecipeComposer({ ingredients }: RecipeComposerProps) {
   const [items, setItems] = React.useState<DraftItem[]>(
-    ingredients.length > 0 ? [createDefaultItem(ingredients)] : [],
+    ingredients.length > 0 ? [createDefaultItem(ingredients)] : []
   );
   const [state, action, pending] = useActionState(
     createRecipeAction,
-    defaultActionState,
+    defaultActionState
   );
 
   const handleAddItem = React.useCallback(() => {
@@ -75,11 +70,11 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
                 ...item,
                 ...patch,
               }
-            : item,
-        ),
+            : item
+        )
       );
     },
-    [],
+    []
   );
 
   const handleRemove = React.useCallback((index: number) => {
@@ -97,7 +92,7 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
         ? [createDefaultItem(ingredients)]
         : prev.map((item) => {
             const exists = ingredients.some(
-              (ingredient) => ingredient.id === item.ingredientId,
+              (ingredient) => ingredient.id === item.ingredientId
             );
             if (exists) {
               return item;
@@ -108,14 +103,16 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
               ingredientId: fallback.ingredientId,
               unit: fallback.unit,
             };
-          }),
+          })
     );
   }, [ingredients]);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">新規レシピ作成</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          新規レシピ作成
+        </h1>
         <p className="text-muted-foreground mt-1">
           ベース情報と材料構成を登録すると、詳細画面で原価計算が確認できます。
         </p>
@@ -140,6 +137,8 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
           <CardContent>
             <form action={action} className="space-y-6">
               <input type="hidden" name="itemCount" value={items.length} />
+              <input type="hidden" name="servingSizeQty" value="1" />
+              <input type="hidden" name="servingSizeUnit" value="meal" />
               <section className="grid gap-4 md:grid-cols-2">
                 <Field>
                   <Label htmlFor="name">レシピ名</Label>
@@ -151,52 +150,25 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
                   />
                 </Field>
                 <Field>
-                  <Label htmlFor="sellingPriceMinor">販売価格 (任意)</Label>
-                  <Input
-                    id="sellingPriceMinor"
-                    name="sellingPriceMinor"
-                    type="number"
-                    min="0"
-                    placeholder="税込価格(円)"
-                  />
-                </Field>
-                <Field>
-                  <Label htmlFor="batchOutputQty">仕上がり量</Label>
-                  <div className="grid grid-cols-[1fr_auto] gap-2">
+                  <Label htmlFor="batchOutputQty">仕上がり食数</Label>
+                  <div className="flex items-center gap-2">
                     <Input
                       id="batchOutputQty"
                       name="batchOutputQty"
                       type="number"
-                      step="0.001"
-                      min="0"
+                      step="0.1"
+                      min="0.1"
                       required
+                      placeholder="例: 10"
                     />
-                    <Input
-                      id="batchOutputUnit"
-                      name="batchOutputUnit"
-                      placeholder="g"
-                      required
-                    />
+                    <span className="text-sm text-muted-foreground">食</span>
                   </div>
-                </Field>
-                <Field>
-                  <Label htmlFor="servingSizeQty">提供量</Label>
-                  <div className="grid grid-cols-[1fr_auto] gap-2">
-                    <Input
-                      id="servingSizeQty"
-                      name="servingSizeQty"
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      required
-                    />
-                    <Input
-                      id="servingSizeUnit"
-                      name="servingSizeUnit"
-                      placeholder="g"
-                      required
-                    />
-                  </div>
+                  <input
+                    type="hidden"
+                    id="batchOutputUnit"
+                    name="batchOutputUnit"
+                    value="meal"
+                  />
                 </Field>
                 <Field>
                   <Label htmlFor="platingYieldRatePercent">
@@ -212,34 +184,63 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
                     placeholder="100"
                   />
                 </Field>
-                <div className="grid grid-cols-[1fr_auto] gap-2">
+                <div className="md:col-span-2">
                   <Field>
-                    <Label htmlFor="sellingTaxRatePercent">
-                      販売税率(%) (任意)
-                    </Label>
-                    <Input
-                      id="sellingTaxRatePercent"
-                      name="sellingTaxRatePercent"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                    />
+                    <div className="text-sm font-medium text-foreground">
+                      販売価格・税設定 (任意)
+                    </div>
+                    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_120px_120px]">
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="sellingPriceMinor"
+                          className="text-xs text-muted-foreground"
+                        >
+                          販売価格
+                        </Label>
+                        <Input
+                          id="sellingPriceMinor"
+                          name="sellingPriceMinor"
+                          type="number"
+                          min="0"
+                          placeholder="税込価格(円)"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="sellingPriceTaxIncluded"
+                          className="text-xs text-muted-foreground"
+                        >
+                          税区分
+                        </Label>
+                        <select
+                          id="sellingPriceTaxIncluded"
+                          name="sellingPriceTaxIncluded"
+                          defaultValue=""
+                          className="border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 h-9 w-full rounded-md border px-3 py-2"
+                        >
+                          <option value="">未指定</option>
+                          <option value="true">税込</option>
+                          <option value="false">税抜</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="sellingTaxRatePercent"
+                          className="text-xs text-muted-foreground"
+                        >
+                          税率(%)
+                        </Label>
+                        <Input
+                          id="sellingTaxRatePercent"
+                          name="sellingTaxRatePercent"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                        />
+                      </div>
+                    </div>
                   </Field>
-                  <div className="self-end">
-                    <Label className="text-xs text-muted-foreground">
-                      税込価格?
-                    </Label>
-                    <select
-                      name="sellingPriceTaxIncluded"
-                      defaultValue=""
-                      className="border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 h-9 w-full rounded-md border px-3 py-2"
-                    >
-                      <option value="">未指定</option>
-                      <option value="true">税込</option>
-                      <option value="false">税抜</option>
-                    </select>
-                  </div>
                 </div>
               </section>
 
@@ -264,11 +265,11 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
                   ) : (
                     items.map((item, index) => {
                       const ingredient = ingredients.find(
-                        (entry) => entry.id === item.ingredientId,
+                        (entry) => entry.id === item.ingredientId
                       );
                       const purchaseUnit = ingredient
                         ? ingredient.purchaseUnit
-                        : 'unit';
+                        : "unit";
 
                       return (
                         <div
@@ -281,9 +282,11 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
                               name={`items.${index}.ingredientId`}
                               value={item.ingredientId}
                               onChange={(event) => {
-                                const nextIngredientId = Number(event.target.value);
+                                const nextIngredientId = Number(
+                                  event.target.value
+                                );
                                 const matched = ingredients.find(
-                                  (entry) => entry.id === nextIngredientId,
+                                  (entry) => entry.id === nextIngredientId
                                 );
                                 handleChange(index, {
                                   ingredientId: nextIngredientId,
@@ -331,34 +334,17 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
                               推奨: {ingredient?.stockUnit ?? purchaseUnit}
                             </p>
                           </div>
-                          <div className="space-y-2">
-                            <Label>廃棄率</Label>
-                            <div className="flex items-center gap-2">
-                              <Input
-                                name={`items.${index}.wasteRate`}
-                                type="number"
-                                min="0"
-                                max="0.99"
-                                step="0.01"
-                                value={item.wasteRate}
-                                onChange={(event) =>
-                                  handleChange(index, {
-                                    wasteRate: Number(event.target.value),
-                                  })
-                                }
-                                required
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive"
-                                onClick={() => handleRemove(index)}
-                                aria-label="行を削除"
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            </div>
+                          <div className="flex items-end justify-end">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              onClick={() => handleRemove(index)}
+                              aria-label="行を削除"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
                           </div>
                         </div>
                       );
@@ -369,7 +355,7 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
 
               <div className="flex items-center gap-3">
                 <Button type="submit" disabled={pending}>
-                  {pending ? '作成中...' : 'レシピを作成'}
+                  {pending ? "作成中..." : "レシピを作成"}
                 </Button>
                 {state.error ? (
                   <p className="text-sm text-destructive">{state.error}</p>

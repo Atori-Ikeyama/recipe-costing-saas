@@ -11,7 +11,7 @@ import {
 } from '@/domain/shared/unit';
 
 describe('Costing service', () => {
-  it('calculates batch and unit cost with yield, waste, and tax normalization', () => {
+  it('calculates batchとunit costを歩留まりとロス率込みで算出する', () => {
     const chicken = createIngredient({
       id: 1,
       teamId: 1,
@@ -20,8 +20,6 @@ describe('Costing service', () => {
       stockUnit: getUnit('g'),
       conversion: createConversion('kg', 'g', 1000),
       purchasePrice: Money.ofMinor(980),
-      taxIncluded: true,
-      taxRatePercent: 10,
       yieldRatePercent: 90,
       supplierId: 1,
       version: 1,
@@ -35,8 +33,6 @@ describe('Costing service', () => {
       stockUnit: getUnit('g'),
       conversion: createConversion('kg', 'g', 1000),
       purchasePrice: Money.ofMinor(198),
-      taxIncluded: true,
-      taxRatePercent: 10,
       yieldRatePercent: 92,
       supplierId: 1,
       version: 1,
@@ -72,16 +68,16 @@ describe('Costing service', () => {
       [onion.id]: onion,
     });
 
-    expect(result.batchCostMinor).toBe(1325);
-    expect(result.unitCostMinor).toBe(133);
+    expect(result.batchCostMinor).toBe(1457);
+    expect(result.unitCostMinor).toBe(146);
     expect(result.breakdown).toHaveLength(2);
     expect(result.breakdown[0]).toMatchObject({
       ingredientId: chicken.id,
-      itemCostMinor: 1225,
+      itemCostMinor: 1347,
     });
     expect(result.breakdown[1]).toMatchObject({
       ingredientId: onion.id,
-      itemCostMinor: 100,
+      itemCostMinor: 110,
     });
   });
 });

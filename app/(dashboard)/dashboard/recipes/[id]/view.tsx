@@ -1,20 +1,15 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useActionState } from 'react';
-import { Info, PlusCircle } from 'lucide-react';
+import * as React from "react";
+import { useActionState } from "react";
+import { Info, PlusCircle } from "lucide-react";
 
-import type { IngredientResponse } from '@/application/ingredients/presenter';
-import type { RecipeResponse } from '@/application/recipes/presenter';
-import type { RecipeCostResult } from '@/domain/costing/costing-service';
-import { addRecipeItemAction } from '../actions';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import type { IngredientResponse } from "@/application/ingredients/presenter";
+import type { RecipeResponse } from "@/application/recipes/presenter";
+import type { RecipeCostResult } from "@/domain/costing/costing-service";
+import { addRecipeItemAction } from "../actions";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -23,9 +18,9 @@ import {
   TableHeader,
   TableRow,
   TableCaption,
-} from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type ActionState = {
   error?: string;
@@ -40,6 +35,8 @@ interface RecipeDetailViewProps {
 
 const defaultActionState: ActionState = {};
 
+const formatUnit = (unit: string) => (unit === "meal" ? "食" : unit);
+
 export function RecipeDetailView({
   recipe,
   ingredients,
@@ -47,7 +44,7 @@ export function RecipeDetailView({
 }: RecipeDetailViewProps) {
   const [state, action, pending] = useActionState(
     addRecipeItemAction,
-    defaultActionState,
+    defaultActionState
   );
 
   return (
@@ -60,12 +57,10 @@ export function RecipeDetailView({
           <CardContent className="space-y-4">
             <div className="grid gap-3 md:grid-cols-3">
               <Stat
-                label="仕上がり量"
-                value={`${recipe.batchOutputQty} ${recipe.batchOutputUnit}`}
-              />
-              <Stat
-                label="提供量"
-                value={`${recipe.servingSizeQty} ${recipe.servingSizeUnit}`}
+                label="仕上がり食数"
+                value={`${recipe.batchOutputQty} ${formatUnit(
+                  recipe.batchOutputUnit
+                )}`}
               />
               <Stat
                 label="盛付歩留まり"
@@ -73,14 +68,18 @@ export function RecipeDetailView({
               />
             </div>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>販売価格: {recipe.sellingPriceMinor ? `¥${recipe.sellingPriceMinor.toLocaleString()}` : '未設定'}</p>
+              <p>
+                販売価格:{" "}
+                {recipe.sellingPriceMinor
+                  ? `¥${recipe.sellingPriceMinor.toLocaleString()}`
+                  : "未設定"}
+              </p>
               {recipe.sellingPriceTaxIncluded !== undefined ? (
                 <p>
-                  税区分:{' '}
-                  {recipe.sellingPriceTaxIncluded ? '税込' : '税抜'}
+                  税区分: {recipe.sellingPriceTaxIncluded ? "税込" : "税抜"}
                   {recipe.sellingTaxRatePercent !== undefined
                     ? ` (${recipe.sellingTaxRatePercent}%)`
-                    : ''}
+                    : ""}
                 </p>
               ) : null}
               <p>バージョン: v{recipe.version}</p>
@@ -101,17 +100,16 @@ export function RecipeDetailView({
                 <TableRow>
                   <TableHead>材料</TableHead>
                   <TableHead className="text-right">使用量</TableHead>
-                  <TableHead className="text-right">廃棄率</TableHead>
                   <TableHead className="text-right">コスト</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recipe.items.map((item) => {
                   const breakdown = cost.breakdown.find(
-                    (entry) => entry.ingredientId === item.ingredientId,
+                    (entry) => entry.ingredientId === item.ingredientId
                   );
                   const ingredient = ingredients.find(
-                    (entry) => entry.id === item.ingredientId,
+                    (entry) => entry.id === item.ingredientId
                   );
 
                   return (
@@ -125,21 +123,20 @@ export function RecipeDetailView({
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.quantity} {item.unit}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {(item.wasteRate * 100).toFixed(1)}%
+                        {item.quantity} {formatUnit(item.unit)}
                       </TableCell>
                       <TableCell className="text-right">
                         {breakdown
                           ? `¥${breakdown.itemCostMinor.toLocaleString()}`
-                          : '-'}
+                          : "-"}
                       </TableCell>
                     </TableRow>
                   );
                 })}
               </TableBody>
-              <TableCaption>材料追加後にページを更新すると即時計算が反映されます。</TableCaption>
+              <TableCaption>
+                材料追加後にページを更新すると即時計算が反映されます。
+              </TableCaption>
             </Table>
           </CardContent>
         </Card>
@@ -182,7 +179,7 @@ interface AddRecipeItemFormProps {
   ingredients: IngredientResponse[];
   action: (
     state: ActionState,
-    formData: FormData,
+    formData: FormData
   ) => Promise<ActionState | void>;
   state: ActionState;
   pending: boolean;
@@ -196,16 +193,15 @@ function AddRecipeItemForm({
   pending,
 }: AddRecipeItemFormProps) {
   const [selectedIngredient, setSelectedIngredient] = React.useState<number>(
-    ingredients[0]?.id ?? 0,
+    ingredients[0]?.id ?? 0
   );
   const [quantity, setQuantity] = React.useState<number>(100);
   const [unit, setUnit] = React.useState<string>(
-    ingredients[0]?.stockUnit ?? 'g',
+    ingredients[0]?.stockUnit ?? "g"
   );
-  const [wasteRate, setWasteRate] = React.useState<number>(0);
 
   const matchedIngredient = ingredients.find(
-    (ingredient) => ingredient.id === selectedIngredient,
+    (ingredient) => ingredient.id === selectedIngredient
   );
 
   React.useEffect(() => {
@@ -234,7 +230,9 @@ function AddRecipeItemForm({
           <select
             name="ingredientId"
             value={selectedIngredient}
-            onChange={(event) => setSelectedIngredient(Number(event.target.value))}
+            onChange={(event) =>
+              setSelectedIngredient(Number(event.target.value))
+            }
             className="border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 h-10 w-full rounded-md border px-3"
           >
             {ingredients.map((ingredient) => (
@@ -254,7 +252,7 @@ function AddRecipeItemForm({
           />
         </Field>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-[200px_minmax(0,1fr)]">
         <Field>
           <Label>使用量</Label>
           <Input
@@ -268,22 +266,13 @@ function AddRecipeItemForm({
           />
         </Field>
         <Field>
-          <Label>廃棄率</Label>
-          <Input
-            name="wasteRate"
-            type="number"
-            min="0"
-            max="0.99"
-            step="0.01"
-            value={wasteRate}
-            onChange={(event) => setWasteRate(Number(event.target.value))}
-            required
-          />
-        </Field>
-        <Field>
           <Label>仕入単位</Label>
           <Input
-            value={matchedIngredient?.purchaseUnit ?? ''}
+            value={
+              matchedIngredient
+                ? formatUnit(matchedIngredient.purchaseUnit)
+                : ""
+            }
             readOnly
             className="bg-muted/50"
           />
@@ -291,7 +280,7 @@ function AddRecipeItemForm({
       </div>
       <Button type="submit" disabled={pending} className="w-full">
         <PlusCircle className="mr-2 size-4" />
-        {pending ? '追加中...' : '材料を追加'}
+        {pending ? "追加中..." : "材料を追加"}
       </Button>
       {state.error ? (
         <p className="text-sm text-destructive">{state.error}</p>
@@ -318,10 +307,7 @@ function CostSummary({ cost }: { cost: RecipeCostResult }) {
           label="1提供あたり"
           value={`¥${cost.unitCostMinor.toLocaleString()}`}
         />
-        <SummaryRow
-          label="提供可能数"
-          value={`${cost.portionsPerBatch} 食`}
-        />
+        <SummaryRow label="提供可能数" value={`${cost.portionsPerBatch} 食`} />
       </CardContent>
     </Card>
   );
@@ -356,7 +342,7 @@ function CostBreakdown({
         ) : (
           cost.breakdown.map((item) => {
             const ingredient = ingredients.find(
-              (entry) => entry.id === item.ingredientId,
+              (entry) => entry.id === item.ingredientId
             );
             const label = ingredient?.name ?? `材料 ${item.ingredientId}`;
 

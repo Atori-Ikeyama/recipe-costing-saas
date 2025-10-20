@@ -81,7 +81,7 @@ export async function createRecipeAction(
 
     const recipe = await createRecipeEntry(payload);
     revalidatePath('/dashboard/recipes');
-    redirect(`/dashboard/recipes/${recipe.id}`);
+    redirect('/dashboard/recipes');
   } catch (error) {
     console.error('createRecipeAction failed', error);
     return {

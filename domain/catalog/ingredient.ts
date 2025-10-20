@@ -1,4 +1,4 @@
-import { Money, RoundingPolicy, roundHalfUp } from '../shared/money';
+import { Money } from '../shared/money';
 import {
   Conversion,
   Quantity,
@@ -8,7 +8,6 @@ import {
   isSameUnit,
 } from '../shared/unit';
 import { ValidationError } from '../shared/errors';
-import { priceExcludingTax } from '../shared/tax';
 
 export interface IngredientProps {
   id: number;
@@ -18,8 +17,6 @@ export interface IngredientProps {
   stockUnit: Unit;
   conversion: Conversion;
   purchasePrice: Money;
-  taxIncluded: boolean;
-  taxRatePercent: number;
   yieldRatePercent: number;
   supplierId?: number;
   version: number;
@@ -58,10 +55,6 @@ export function createIngredient(props: IngredientProps): Ingredient {
     throw new ValidationError('Yield rate must be within (0, 100]');
   }
 
-  if (!Number.isFinite(props.taxRatePercent) || props.taxRatePercent < 0) {
-    throw new ValidationError('Tax rate must be non-negative');
-  }
-
   if (props.version <= 0) {
     throw new ValidationError('Version must be positive');
   }
@@ -71,15 +64,4 @@ export function createIngredient(props: IngredientProps): Ingredient {
 
 export function purchaseQuantityInStockUnits(ingredient: Ingredient): Quantity {
   return applyConversion(ingredient.purchaseQuantity, ingredient.conversion);
-}
-
-export function purchasePriceExcludingTax(
-  ingredient: Ingredient,
-  rounding: RoundingPolicy = roundHalfUp,
-): Money {
-  return priceExcludingTax(ingredient.purchasePrice, {
-    taxIncluded: ingredient.taxIncluded,
-    taxRatePercent: ingredient.taxRatePercent,
-    rounding,
-  });
 }

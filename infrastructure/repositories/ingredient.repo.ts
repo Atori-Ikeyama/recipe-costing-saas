@@ -62,4 +62,23 @@ export class IngredientRepository {
 
     return toIngredientDomain(row);
   }
+
+  async delete(teamId: number, id: number, version: number): Promise<void> {
+    const [row] = await db
+      .delete(ingredients)
+      .where(
+        and(
+          eq(ingredients.id, id),
+          eq(ingredients.teamId, teamId),
+          eq(ingredients.version, version),
+        ),
+      )
+      .returning({ id: ingredients.id });
+
+    if (!row) {
+      throw new ValidationError(
+        'Ingredient deletion failed due to concurrent modification',
+      );
+    }
+  }
 }

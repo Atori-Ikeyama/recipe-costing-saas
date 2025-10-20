@@ -1,4 +1,4 @@
-import { Ingredient, purchasePriceExcludingTax } from '../catalog/ingredient';
+import { Ingredient } from '../catalog/ingredient';
 import { Recipe, servingsPerBatch } from '../recipe/recipe';
 import { CostingPolicy, defaultCostingPolicy } from '../costing/costing-service';
 import {
@@ -105,10 +105,9 @@ export function calculateProcurement(
     const unitsNeeded = totalStockQty / purchaseQtyStock.value;
     const requiredPurchaseUnits = Math.ceil(unitsNeeded);
 
-    const purchasePriceExcl = purchasePriceExcludingTax(ingredient, policy.round);
     const estimatedAmountMinor =
       requiredPurchaseUnits > 0
-        ? policy.round(purchasePriceExcl.amountMinor * requiredPurchaseUnits)
+        ? policy.round(ingredient.purchasePrice.amountMinor * requiredPurchaseUnits)
         : 0;
 
     totalCostMinor += estimatedAmountMinor;
