@@ -24,17 +24,17 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navItems = [
-    { href: "/dashboard/ingredients", icon: Carrot, label: "Ingredients" },
-    { href: "/dashboard/recipes", icon: UtensilsCrossed, label: "Recipes" },
+    { href: "/dashboard/ingredients", icon: Carrot, label: "材料" },
+    { href: "/dashboard/recipes", icon: UtensilsCrossed, label: "レシピ" },
     {
       href: "/dashboard/procurement",
       icon: ShoppingCart,
-      label: "Procurement",
+      label: "仕入計画",
       dividerAfter: true,
     },
-    { href: "/dashboard", icon: Users, label: "Team" },
-    { href: "/dashboard/general", icon: Settings, label: "General" },
-    { href: "/dashboard/security", icon: Shield, label: "Security" },
+    { href: "/dashboard", icon: Users, label: "チーム" },
+    { href: "/dashboard/general", icon: Settings, label: "基本設定" },
+    { href: "/dashboard/security", icon: Shield, label: "セキュリティ" },
   ];
 
   return (
@@ -42,7 +42,7 @@ export default function DashboardLayout({
       {/* Mobile header */}
       <div className="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 p-4">
         <div className="flex items-center">
-          <span className="font-medium">Settings</span>
+          <span className="font-medium">設定</span>
         </div>
         <Button
           className="-mr-3"
@@ -50,7 +50,7 @@ export default function DashboardLayout({
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         >
           <Menu className="h-6 w-6" />
-          <span className="sr-only">Toggle sidebar</span>
+          <span className="sr-only">サイドバーを切り替え</span>
         </Button>
       </div>
 

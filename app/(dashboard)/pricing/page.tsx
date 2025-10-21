@@ -27,9 +27,9 @@ export default async function PricingPage() {
           interval={basePrice?.interval || 'month'}
           trialDays={basePrice?.trialPeriodDays || 7}
           features={[
-            'Unlimited Usage',
-            'Unlimited Workspace Members',
-            'Email Support',
+            '利用量は無制限',
+            'ワークスペースメンバーも無制限',
+            'メールサポート付き',
           ]}
           priceId={basePrice?.id}
         />
@@ -39,9 +39,9 @@ export default async function PricingPage() {
           interval={plusPrice?.interval || 'month'}
           trialDays={plusPrice?.trialPeriodDays || 7}
           features={[
-            'Everything in Base, and:',
-            'Early Access to New Features',
-            '24/7 Support + Slack Access',
+            'Baseプランの内容に加えて',
+            '新機能を先行利用',
+            '24時間365日のサポート（Slack対応）',
           ]}
           priceId={plusPrice?.id}
         />
@@ -65,16 +65,25 @@ function PricingCard({
   features: string[];
   priceId?: string;
 }) {
+  const intervalLabel =
+    interval === 'year'
+      ? '年'
+      : interval === 'week'
+      ? '週'
+      : interval === 'day'
+      ? '日'
+      : '月';
+
   return (
     <div className="pt-6">
       <h2 className="text-2xl font-medium text-gray-900 mb-2">{name}</h2>
       <p className="text-sm text-gray-600 mb-4">
-        with {trialDays} day free trial
+        最初の{trialDays}日間は無料でお試しできます
       </p>
       <p className="text-4xl font-medium text-gray-900 mb-6">
         ${price / 100}{' '}
         <span className="text-xl font-normal text-gray-600">
-          per user / {interval}
+          1ユーザーあたり / {intervalLabel}
         </span>
       </p>
       <ul className="space-y-4 mb-8">

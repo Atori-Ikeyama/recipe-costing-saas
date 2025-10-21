@@ -31,40 +31,40 @@ function getRelativeTime(date: Date) {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (diffInSeconds < 60) return 'just now';
+  if (diffInSeconds < 60) return 'たった今';
   if (diffInSeconds < 3600)
-    return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    return `${Math.floor(diffInSeconds / 60)}分前`;
   if (diffInSeconds < 86400)
-    return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 3600)}時間前`;
   if (diffInSeconds < 604800)
-    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return `${Math.floor(diffInSeconds / 86400)}日前`;
   return date.toLocaleDateString();
 }
 
 function formatAction(action: ActivityType): string {
   switch (action) {
     case ActivityType.SIGN_UP:
-      return 'You signed up';
+      return 'サインアップしました';
     case ActivityType.SIGN_IN:
-      return 'You signed in';
+      return 'サインインしました';
     case ActivityType.SIGN_OUT:
-      return 'You signed out';
+      return 'サインアウトしました';
     case ActivityType.UPDATE_PASSWORD:
-      return 'You changed your password';
+      return 'パスワードを変更しました';
     case ActivityType.DELETE_ACCOUNT:
-      return 'You deleted your account';
+      return 'アカウントを削除しました';
     case ActivityType.UPDATE_ACCOUNT:
-      return 'You updated your account';
+      return 'アカウント情報を更新しました';
     case ActivityType.CREATE_TEAM:
-      return 'You created a new team';
+      return '新しいチームを作成しました';
     case ActivityType.REMOVE_TEAM_MEMBER:
-      return 'You removed a team member';
+      return 'チームメンバーを削除しました';
     case ActivityType.INVITE_TEAM_MEMBER:
-      return 'You invited a team member';
+      return 'チームメンバーを招待しました';
     case ActivityType.ACCEPT_INVITATION:
-      return 'You accepted an invitation';
+      return '招待を承認しました';
     default:
-      return 'Unknown action occurred';
+      return '不明な操作が発生しました';
   }
 }
 
@@ -74,11 +74,11 @@ export default async function ActivityPage() {
   return (
     <section className="flex-1 p-4 lg:p-8">
       <h1 className="text-lg lg:text-2xl font-medium text-gray-900 mb-6">
-        Activity Log
+        アクティビティログ
       </h1>
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+          <CardTitle>最近の操作</CardTitle>
         </CardHeader>
         <CardContent>
           {logs.length > 0 ? (
@@ -97,7 +97,7 @@ export default async function ActivityPage() {
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         {formattedAction}
-                        {log.ipAddress && ` from IP ${log.ipAddress}`}
+                        {log.ipAddress ? `（IP: ${log.ipAddress}）` : ''}
                       </p>
                       <p className="text-xs text-gray-500">
                         {getRelativeTime(new Date(log.timestamp))}
@@ -111,11 +111,10 @@ export default async function ActivityPage() {
             <div className="flex flex-col items-center justify-center text-center py-12">
               <AlertCircle className="h-12 w-12 text-orange-500 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No activity yet
+                まだアクティビティがありません
               </h3>
               <p className="text-sm text-gray-500 max-w-sm">
-                When you perform actions like signing in or updating your
-                account, they'll appear here.
+                サインインやアカウント情報の更新などを行うと、ここに表示されます。
               </p>
             </div>
           )}

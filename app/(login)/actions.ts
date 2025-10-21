@@ -65,7 +65,7 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
 
   if (userWithTeam.length === 0) {
     return {
-      error: 'Invalid email or password. Please try again.',
+      error: 'メールアドレスまたはパスワードが正しくありません。もう一度お試しください。',
       email,
       password
     };
@@ -80,7 +80,7 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
 
   if (!isPasswordValid) {
     return {
-      error: 'Invalid email or password. Please try again.',
+      error: 'メールアドレスまたはパスワードが正しくありません。もう一度お試しください。',
       email,
       password
     };
@@ -117,7 +117,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
 
   if (existingUser.length > 0) {
     return {
-      error: 'Failed to create user. Please try again.',
+      error: 'ユーザーの作成に失敗しました。もう一度お試しください。',
       email,
       password
     };
@@ -135,7 +135,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
 
   if (!createdUser) {
     return {
-      error: 'Failed to create user. Please try again.',
+      error: 'ユーザーの作成に失敗しました。もう一度お試しください。',
       email,
       password
     };
@@ -176,19 +176,19 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
         .where(eq(teams.id, teamId))
         .limit(1);
     } else {
-      return { error: 'Invalid or expired invitation.', email, password };
+      return { error: '招待リンクが無効または期限切れです。', email, password };
     }
   } else {
     // Create a new team if there's no invitation
     const newTeam: NewTeam = {
-      name: `${email}'s Team`
+      name: `${email}のチーム`
     };
 
     [createdTeam] = await db.insert(teams).values(newTeam).returning();
 
     if (!createdTeam) {
       return {
-        error: 'Failed to create team. Please try again.',
+        error: 'チームの作成に失敗しました。もう一度お試しください。',
         email,
         password
       };
@@ -249,7 +249,7 @@ export const updatePassword = validatedActionWithUser(
         currentPassword,
         newPassword,
         confirmPassword,
-        error: 'Current password is incorrect.'
+        error: '現在のパスワードが正しくありません。'
       };
     }
 
@@ -258,7 +258,7 @@ export const updatePassword = validatedActionWithUser(
         currentPassword,
         newPassword,
         confirmPassword,
-        error: 'New password must be different from the current password.'
+        error: '新しいパスワードは現在のパスワードと異なる必要があります。'
       };
     }
 
@@ -267,7 +267,7 @@ export const updatePassword = validatedActionWithUser(
         currentPassword,
         newPassword,
         confirmPassword,
-        error: 'New password and confirmation password do not match.'
+        error: '新しいパスワードと確認用パスワードが一致しません。'
       };
     }
 
@@ -283,7 +283,7 @@ export const updatePassword = validatedActionWithUser(
     ]);
 
     return {
-      success: 'Password updated successfully.'
+      success: 'パスワードを更新しました。'
     };
   }
 );
@@ -301,7 +301,7 @@ export const deleteAccount = validatedActionWithUser(
     if (!isPasswordValid) {
       return {
         password,
-        error: 'Incorrect password. Account deletion failed.'
+        error: 'パスワードが正しくないため、アカウントを削除できませんでした。'
       };
     }
 
@@ -339,8 +339,8 @@ export const deleteAccount = validatedActionWithUser(
 );
 
 const updateAccountSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  email: z.string().email('Invalid email address')
+  name: z.string().min(1, '氏名は必須です').max(100),
+  email: z.string().email('有効なメールアドレスを入力してください')
 });
 
 export const updateAccount = validatedActionWithUser(
@@ -354,7 +354,7 @@ export const updateAccount = validatedActionWithUser(
       logActivity(userWithTeam?.teamId, user.id, ActivityType.UPDATE_ACCOUNT)
     ]);
 
-    return { name, success: 'Account updated successfully.' };
+    return { name, success: 'アカウント情報を更新しました。' };
   }
 );
 
@@ -369,7 +369,7 @@ export const removeTeamMember = validatedActionWithUser(
     const userWithTeam = await getUserWithTeam(user.id);
 
     if (!userWithTeam?.teamId) {
-      return { error: 'User is not part of a team' };
+      return { error: 'ユーザーはチームに所属していません。' };
     }
 
     await db
@@ -387,12 +387,12 @@ export const removeTeamMember = validatedActionWithUser(
       ActivityType.REMOVE_TEAM_MEMBER
     );
 
-    return { success: 'Team member removed successfully' };
+    return { success: 'チームメンバーを削除しました。' };
   }
 );
 
 const inviteTeamMemberSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('有効なメールアドレスを入力してください'),
   role: z.enum(['member', 'owner'])
 });
 
@@ -403,7 +403,7 @@ export const inviteTeamMember = validatedActionWithUser(
     const userWithTeam = await getUserWithTeam(user.id);
 
     if (!userWithTeam?.teamId) {
-      return { error: 'User is not part of a team' };
+      return { error: 'ユーザーはチームに所属していません。' };
     }
 
     const existingMember = await db
@@ -416,7 +416,7 @@ export const inviteTeamMember = validatedActionWithUser(
       .limit(1);
 
     if (existingMember.length > 0) {
-      return { error: 'User is already a member of this team' };
+      return { error: 'このチームにはすでに参加しています。' };
     }
 
     // Check if there's an existing invitation
@@ -433,7 +433,7 @@ export const inviteTeamMember = validatedActionWithUser(
       .limit(1);
 
     if (existingInvitation.length > 0) {
-      return { error: 'An invitation has already been sent to this email' };
+      return { error: 'このメールアドレスには既に招待を送信済みです。' };
     }
 
     // Create a new invitation
@@ -454,6 +454,6 @@ export const inviteTeamMember = validatedActionWithUser(
     // TODO: Send invitation email and include ?inviteId={id} to sign-up URL
     // await sendInvitationEmail(email, userWithTeam.team.name, role)
 
-    return { success: 'Invitation sent successfully' };
+    return { success: '招待を送信しました。' };
   }
 );

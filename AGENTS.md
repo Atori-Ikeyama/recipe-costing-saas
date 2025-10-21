@@ -1,24 +1,42 @@
-# Repository Guidelines
+# リポジトリガイドライン
 
-## Project Structure & Module Organization
-Primary application code lives under `app/` with App Router route groups such as `(dashboard)` and API handlers in `app/api`. Reusable primitives sit in `components/ui`. Shared domain logic lives in `lib/` (Drizzle schema in `lib/db`, auth helpers in `lib/auth`). Root configs (`next.config.ts`, `drizzle.config.ts`, `tsconfig.json`) stay in the project root alongside assets like `app/globals.css`.
+## プロジェクト構成とモジュール整理
+- `app/` には App Router の各セグメントを配置します。`(login)` や `(dashboard)` などのルートグループは、機能フォルダーに加えて同置された `view.tsx` コンポーネントと、必要に応じたサーバーアクションやローダーを含めます。API ハンドラーは `app/api` にまとめてください。
+- `application/` はユースケースとプレゼンターを実装します。ドメインサービスを調整し、`lib/auth` によるアクセス制御を適用し、UI 向けにレスポンスを整形します。明示的な Next.js 境界（例: サーバーアクション）を除き、フレームワーク非依存を保ってください。
+- `domain/` はレシピ原価計算のコアモデル（エンティティ、`Money` などの値オブジェクト、計算ロジック）を定義します。ここでは不変条件を守り、フレームワークやデータベースのコードを避けてください。
+- `infrastructure/` には Drizzle を利用するリポジトリや、永続化レコードとドメインオブジェクトを相互変換するマッパーを置きます。
+- `components/ui/` には再利用可能な UI プリミティブ（shadcn/ui 派生が中心）を格納します。機能固有のコンポーネントは対象ルートセグメントと同じ階層に置きます。
+- `lib/` は共有ユーティリティの集約場所です。`lib/db` の Drizzle スキーマとセットアップスクリプト、`lib/auth` の認証ヘルパー、`lib/zod-schemas` のバリデーションなどを揃えてください。
+- `tests/` には Vitest のスペックを置きます（現状はドメインロジックが中心）。可読性を高めるため、対象コードと同じディレクトリ構造を意識してください。
+- ルート直下の設定ファイル（`next.config.ts`、`drizzle.config.ts`、`tsconfig.json`、`vitest.config.ts` など）は、整合性が必要な場合を除き編集を避けてください。
 
-## Build, Test, and Development Commands
-- `pnpm install` — sync dependencies defined in `package.json` and `pnpm-lock.yaml`.
-- `pnpm dev` — launch the Next.js dev server with Turbopack; visit `http://localhost:3000`.
-- `pnpm build` / `pnpm start` — compile for production then serve the optimized build.
-- `pnpm db:setup` — provision the database schema via `lib/db/setup.ts`.
-- `pnpm db:seed` — load sample data; rerun after schema changes that need fixtures.
-- `pnpm db:generate` / `pnpm db:migrate` / `pnpm db:studio` — manage Drizzle migrations and inspect data.
+## ビルド・テスト・開発コマンド
+- `pnpm install` — `package.json` / `pnpm-lock.yaml` に基づいて依存関係をインストールします。
+- `pnpm dev` — Next.js の開発サーバー（Turbopack、`http://localhost:3000`）を起動します。
+- `pnpm build` / `pnpm start` — 本番ビルドを作成し、最適化された成果物を配信します。
+- `pnpm db:setup` — `.env.local` のテンプレートを生成し、`lib/db/setup.ts` を通じてデータベーススキーマを整備します。
+- `pnpm db:seed` — 開発用データを投入します。スキーマ変更でフィクスチャが変わる場合は再実行してください。
+- `pnpm db:generate` / `pnpm db:migrate` / `pnpm db:studio` — Drizzle のマイグレーション管理とデータ確認を行います。
+- `pnpm test` / `pnpm test:watch` — `tests/` 配下の Vitest スイートを実行します。
 
-## Coding Style & Naming Conventions
-Write application code in TypeScript using modern React (function components and hooks). Use 2-space indentation, trailing commas, and single quotes to match existing files. Name components in PascalCase (`RecipeTable.tsx`), colocate feature helpers with their route segment, and export shared utilities from `lib`. Tailwind classes stay inline; order them layout → typography → state for readable diffs. Environment variables follow upper snake case and live in `.env.local`.
+## コーディングスタイルと命名規則
+- TypeScript とモダン React（関数コンポーネントとフック）で実装し、リポジトリ標準の 2 スペースインデント・末尾カンマ・シングルクォートを守ってください。
+- レイヤーアーキテクチャを尊重します。ドメイン層は純粋性を保ち、アプリケーション層がユースケースを調整し、インフラ層が I/O を担います。`application/ingredients/index.ts` のようにバレルファイルで安定したエントリーポイントを提供してください。
+- React コンポーネントは PascalCase（例: `RecipeTable.tsx`）で命名し、機能ヘルパーは該当ルートセグメントと同居させます。Tailwind クラスはインラインに記述し、「レイアウト → タイポグラフィ → 状態」の順序を意識してください。
+- ルートインポートには `@/` エイリアスを使用し、階層の深い相対パスよりも明示的なモジュール名を優先します。
+- 環境変数は大文字スネークケースとし、`.env.local` に配置します。秘密情報やテナント固有 ID のハードコードは避けてください。
 
-## Testing Guidelines
-Automated tests are not configured yet. When adding behaviors, include lightweight unit or integration coverage and wire it into a future `pnpm test` script so the team can run everything with one command. At minimum, manually verify key flows (auth, recipe costing, payment) against a seeded database before opening a PR and document new fixtures under `lib/db`.
+## テストガイドライン
+- テスト設定は `vitest.config.ts` にあります。ドメイン／アプリケーション層の構成を意識して `tests/` 配下にスペックを配置してください。
+- ドメインサービス（`domain/*`）やユースケース（`application/*`）はユニットテストでカバーします。サーバーアクションや API ルートはインフラ境界をスタブ化した結合テストを優先してください。
+- 挙動を追加した際は `pnpm test` を実行し、PR で結果ログを共有してください。データ変更が必要な場合は `lib/db` のフィクスチャを更新または追加します。
+- 上位レイヤーの自動テストが整うまでは、シード済み DB を用いた重要フロー（認証・原価計算・Stripe 決済）の手動確認を継続してください。
 
-## Commit & Pull Request Guidelines
-Recent history mixes conventional prefixes (`fix:`, `feat:`) with descriptive sentences; prefer the `type: summary` style so logs stay scannable. Scope each commit to one logical change and reference issue IDs when available. PRs should describe the user impact, list testing evidence (commands run, screenshots for UI updates), and flag any schema or env changes. Request review from domain owners before merging.
+## コミットとプルリクエストのガイドライン
+- コミットメッセージは `type: summary` 形式（例: `feat: add recipe cost preview`）を用い、1 コミットあたり 1 つの論理変更に留めます。可能であれば課題 ID を参照してください。
+- PR ではユーザー影響、実施したテスト証跡（`pnpm test`、手動確認、UI 変更のスクリーンショットなど）、スキーマ／環境変数の変更有無を明記し、該当ドメインのレビュー担当へリクエストしてください。
 
-## Security & Configuration Tips
-Never commit secrets; store credentials in `.env.local` and reference them through Next.js runtime config. When altering Drizzle schemas, regenerate migrations and review them for destructive SQL before applying. Audit Stripe integrations in `lib/payments` whenever payment flows change to keep webhooks and API keys aligned.
+## セキュリティと設定の注意
+- 秘密情報は決してコミットせず、`.env.local` に保存して Next.js のランタイム設定経由で参照します。
+- Drizzle のスキーマを変更した場合はマイグレーションを再生成し、破壊的な SQL が含まれていないか確認したうえで必要なデータ更新を記録します。
+- 支払いフローを変更する際は `lib/payments` の Stripe 連携を監査し、Webhook ハンドラーや API キーが最新状態に揃っていることを確かめてください。
