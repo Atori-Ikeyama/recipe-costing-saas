@@ -1,18 +1,13 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { FileDown, PlusCircle, Trash2 } from 'lucide-react';
+import * as React from "react";
+import { FileDown, PlusCircle, Trash2 } from "lucide-react";
 
-import type { RecipeResponse } from '@/application/recipes/presenter';
-import type { IngredientResponse } from '@/application/ingredients/presenter';
-import { calculateProcurementAction } from './actions';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from '@/components/ui/card';
+import type { RecipeResponse } from "@/application/recipes/presenter";
+import type { IngredientResponse } from "@/application/ingredients/presenter";
+import { calculateProcurementAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableHeader,
@@ -21,10 +16,10 @@ import {
   TableBody,
   TableCell,
   TableCaption,
-} from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { toCsv } from '@/lib/csv';
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toCsv } from "@/lib/csv";
 
 interface ProcurementDashboardProps {
   recipes: RecipeResponse[];
@@ -49,20 +44,21 @@ interface ProcurementTableItem {
   estimatedAmountMinor: number;
 }
 
-export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashboardProps) {
+export function ProcurementDashboard({
+  recipes,
+  ingredients,
+}: ProcurementDashboardProps) {
   const [items, setItems] = React.useState<PlanItem[]>(
-    recipes.length > 0
-      ? [{ recipeId: recipes[0]!.id, servings: 10 }]
-      : [],
+    recipes.length > 0 ? [{ recipeId: recipes[0]!.id, servings: 10 }] : []
   );
-  const [result, setResult] = React.useState<
-    Awaited<ReturnType<typeof calculateProcurementAction>> | null
-  >(null);
+  const [result, setResult] = React.useState<Awaited<
+    ReturnType<typeof calculateProcurementAction>
+  > | null>(null);
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const ingredientMap = React.useMemo(
     () => new Map(ingredients.map((ingredient) => [ingredient.id, ingredient])),
-    [ingredients],
+    [ingredients]
   );
 
   const handleAdd = React.useCallback(() => {
@@ -81,11 +77,11 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
                 ...item,
                 ...patch,
               }
-            : item,
-        ),
+            : item
+        )
       );
     },
-    [],
+    []
   );
 
   const handleRemove = React.useCallback((index: number) => {
@@ -95,7 +91,7 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
   const handleCalculate = React.useCallback(async () => {
     if (items.length === 0) {
       setResult(null);
-      setError('販売計画が未設定です');
+      setError("販売計画が未設定です");
       return;
     }
 
@@ -103,7 +99,7 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
     setError(null);
     try {
       const formData = new FormData();
-      formData.append('itemCount', String(items.length));
+      formData.append("itemCount", String(items.length));
       items.forEach((item, index) => {
         formData.append(`items.${index}.recipeId`, String(item.recipeId));
         formData.append(`items.${index}.servings`, String(item.servings));
@@ -113,7 +109,7 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
       setResult(calculation);
     } catch (err) {
       console.error(err);
-      setError('調達計算に失敗しました');
+      setError("調達計算に失敗しました");
     } finally {
       setPending(false);
     }
@@ -126,8 +122,9 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
 
     return result.items.map((item) => {
       const ingredient = ingredientMap.get(item.ingredientId);
-      const stockUnitCode = ingredient?.stockUnit ?? item.stockUnit ?? '';
-      const purchaseUnitCode = ingredient?.purchaseUnit ?? item.purchaseUnit ?? null;
+      const stockUnitCode = ingredient?.stockUnit ?? item.stockUnit ?? "";
+      const purchaseUnitCode =
+        ingredient?.purchaseUnit ?? item.purchaseUnit ?? null;
       const conversionFactor =
         ingredient?.convPurchaseToStock && ingredient.convPurchaseToStock > 0
           ? ingredient.convPurchaseToStock
@@ -174,32 +171,32 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
       ingredientName: item.ingredientName,
       stockUnit: item.stockUnitCode,
       totalStockQty: item.stockQuantityValue,
-      purchaseUnit: item.purchaseUnitCode ?? '',
-      theoreticalPurchaseQty: item.theoreticalPurchaseQuantityValue ?? '',
-      roundedPurchaseQty: item.roundedPurchaseQuantityValue ?? '',
+      purchaseUnit: item.purchaseUnitCode ?? "",
+      theoreticalPurchaseQty: item.theoreticalPurchaseQuantityValue ?? "",
+      roundedPurchaseQty: item.roundedPurchaseQuantityValue ?? "",
       requiredPurchaseUnits: item.requiredPurchaseUnits,
       estimatedAmountMinor: item.estimatedAmountMinor,
     }));
 
     const csv = toCsv(rows, [
-      'ingredientId',
-      'ingredientName',
-      'stockUnit',
-      'totalStockQty',
-      'theoreticalPurchaseQty',
-      'purchaseUnit',
-      'roundedPurchaseQty',
-      'requiredPurchaseUnits',
-      'estimatedAmountMinor',
+      "ingredientId",
+      "ingredientName",
+      "stockUnit",
+      "totalStockQty",
+      "theoreticalPurchaseQty",
+      "purchaseUnit",
+      "roundedPurchaseQty",
+      "requiredPurchaseUnits",
+      "estimatedAmountMinor",
     ]);
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.setAttribute(
-      'download',
-      `procurement-${new Date().toISOString().slice(0, 10)}.csv`,
+      "download",
+      `procurement-${new Date().toISOString().slice(0, 10)}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -209,11 +206,11 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
 
   const formatQuantity = React.useCallback(
     (value: number) =>
-      new Intl.NumberFormat('ja-JP', {
+      new Intl.NumberFormat("ja-JP", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       }).format(value),
-    [],
+    []
   );
 
   return (
@@ -306,11 +303,9 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
               onClick={handleCalculate}
               disabled={pending || recipes.length === 0}
             >
-              {pending ? '計算中...' : '調達量を計算'}
+              {pending ? "計算中..." : "調達量を計算"}
             </Button>
-            {error ? (
-              <p className="text-sm text-destructive">{error}</p>
-            ) : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </div>
         </CardContent>
       </Card>
@@ -337,7 +332,7 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
           <CardContent>
             <Table>
               <TableHeader>
-              <TableRow>
+                <TableRow>
                   <TableHead>材料</TableHead>
                   <TableHead>必要在庫量</TableHead>
                   <TableHead>発注総量</TableHead>
@@ -350,15 +345,18 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
                   const ingredient = ingredientMap.get(item.ingredientId);
                   const purchasePerUnit =
                     item.purchaseUnitQtyValue !== null && item.purchaseUnitCode
-                      ? `${formatQuantity(item.purchaseUnitQtyValue)} ${item.purchaseUnitCode}`
+                      ? `${formatQuantity(item.purchaseUnitQtyValue)} ${
+                          item.purchaseUnitCode
+                        }`
                       : item.purchaseUnitCode
-                        ? `${item.purchaseUnitCode} 単位`
-                        : null;
+                      ? `${item.purchaseUnitCode} 単位`
+                      : null;
                   const showRoundedAdjustment =
                     item.theoreticalPurchaseQuantityValue !== null &&
                     item.roundedPurchaseQuantityValue !== null &&
                     Math.abs(
-                      item.roundedPurchaseQuantityValue - item.theoreticalPurchaseQuantityValue,
+                      item.roundedPurchaseQuantityValue -
+                        item.theoreticalPurchaseQuantityValue
                     ) > 1e-6;
 
                   return (
@@ -370,22 +368,27 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
                         <div className="text-xs text-muted-foreground">
                           {purchasePerUnit
                             ? `仕入単位: ${purchasePerUnit}`
-                            : '仕入単位情報なし'}
+                            : "仕入単位情報なし"}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {formatQuantity(item.stockQuantityValue)} {item.stockUnitCode}
+                        {formatQuantity(item.stockQuantityValue)}{" "}
+                        {item.stockUnitCode}
                       </TableCell>
                       <TableCell>
                         {item.theoreticalPurchaseQuantityValue !== null &&
                         item.purchaseUnitCode ? (
                           <>
-                            {formatQuantity(item.theoreticalPurchaseQuantityValue)}{' '}
+                            {formatQuantity(
+                              item.theoreticalPurchaseQuantityValue
+                            )}{" "}
                             {item.purchaseUnitCode}
                             {showRoundedAdjustment && item.purchaseUnitCode ? (
                               <div className="text-xs text-muted-foreground">
-                                切上後:{' '}
-                                {formatQuantity(item.roundedPurchaseQuantityValue ?? 0)}{' '}
+                                切上後:{" "}
+                                {formatQuantity(
+                                  item.roundedPurchaseQuantityValue ?? 0
+                                )}{" "}
                                 {item.purchaseUnitCode}
                               </div>
                             ) : null}
@@ -393,11 +396,11 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
                         ) : item.roundedPurchaseQuantityValue !== null &&
                           item.purchaseUnitCode ? (
                           <>
-                            {formatQuantity(item.roundedPurchaseQuantityValue)}{' '}
+                            {formatQuantity(item.roundedPurchaseQuantityValue)}{" "}
                             {item.purchaseUnitCode}
                           </>
                         ) : (
-                          '-'
+                          "-"
                         )}
                       </TableCell>
                       <TableCell>{item.requiredPurchaseUnits}</TableCell>
@@ -408,9 +411,6 @@ export function ProcurementDashboard({ recipes, ingredients }: ProcurementDashbo
                   );
                 })}
               </TableBody>
-              <TableCaption>
-                在庫必要量は廃棄率を加味したストック単位、発注総量は仕入単位換算の理論値、発注単位数は切り上げ後の注文ケース数です。
-              </TableCaption>
             </Table>
           </CardContent>
         </Card>

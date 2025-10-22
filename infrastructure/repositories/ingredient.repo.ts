@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, ilike } from 'drizzle-orm';
 
 import { db } from '@/lib/db/drizzle';
 import { ingredients } from '@/lib/db/schema';
@@ -10,10 +10,29 @@ import {
 import { Ingredient } from '@/domain/catalog/ingredient';
 import { ValidationError } from '@/domain/shared/errors';
 
+const escapeLikePattern = (value: string) => value.replace(/[%_]/g, '\\$&');
+
+type ListOptions = {
+  search?: string;
+};
+
 export class IngredientRepository {
-  async listByTeam(teamId: number): Promise<Ingredient[]> {
+  async listByTeam(
+    teamId: number,
+    options: ListOptions = {},
+  ): Promise<Ingredient[]> {
+    const where = options.search
+      ? and(
+          eq(ingredients.teamId, teamId),
+          ilike(
+            ingredients.name,
+            `%${escapeLikePattern(options.search)}%`,
+          ),
+        )
+      : eq(ingredients.teamId, teamId);
+
     const rows = await db.query.ingredients.findMany({
-      where: eq(ingredients.teamId, teamId),
+      where,
       orderBy: asc(ingredients.name),
     });
 

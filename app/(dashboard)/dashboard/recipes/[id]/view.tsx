@@ -1,13 +1,10 @@
 "use client";
 
-import * as React from "react";
-import { useActionState } from "react";
-import { Info, PlusCircle } from "lucide-react";
+import Link from "next/link";
 
 import type { IngredientResponse } from "@/application/ingredients/presenter";
 import type { RecipeResponse } from "@/application/recipes/presenter";
 import type { RecipeCostResult } from "@/domain/costing/costing-service";
-import { addRecipeItemAction } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -19,13 +16,9 @@ import {
   TableRow,
   TableCaption,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DonutChart } from "@/components/ui/donut-chart";
 
-type ActionState = {
-  error?: string;
-  success?: string;
-};
+const formatUnit = (unit: string) => (unit === "meal" ? "食" : unit);
 
 interface RecipeDetailViewProps {
   recipe: RecipeResponse;
@@ -33,342 +26,333 @@ interface RecipeDetailViewProps {
   cost: RecipeCostResult;
 }
 
-const defaultActionState: ActionState = {};
-
-const formatUnit = (unit: string) => (unit === "meal" ? "食" : unit);
-
 export function RecipeDetailView({
   recipe,
   ingredients,
   cost,
 }: RecipeDetailViewProps) {
-  const [state, action, pending] = useActionState(
-    addRecipeItemAction,
-    defaultActionState
+  const currencyFormatter = new Intl.NumberFormat("ja-JP");
+  const totalCost = cost.breakdown.reduce(
+    (sum, item) => sum + item.itemCostMinor,
+    0
   );
+  const sellingPrice = recipe.sellingPriceMinor;
+  const costRatePercent =
+    sellingPrice && sellingPrice > 0
+      ? (cost.unitCostMinor / sellingPrice) * 100
+      : undefined;
 
-  return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{recipe.name}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-3">
-              <Stat
-                label="仕上がり食数"
-                value={`${recipe.batchOutputQty} ${formatUnit(
-                  recipe.batchOutputUnit
-                )}`}
-              />
-              <Stat
-                label="盛付歩留まり"
-                value={`${recipe.platingYieldRatePercent ?? 100}%`}
-              />
-            </div>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                販売価格:{" "}
-                {recipe.sellingPriceMinor
-                  ? `¥${recipe.sellingPriceMinor.toLocaleString()}`
-                  : "未設定"}
-              </p>
-              {recipe.sellingPriceTaxIncluded !== undefined ? (
-                <p>
-                  税区分: {recipe.sellingPriceTaxIncluded ? "税込" : "税抜"}
-                  {recipe.sellingTaxRatePercent !== undefined
-                    ? ` (${recipe.sellingTaxRatePercent}%)`
-                    : ""}
-                </p>
-              ) : null}
-              <p>バージョン: v{recipe.version}</p>
-            </div>
-          </CardContent>
-        </Card>
+  const palette = [
+    "#0EA5E9",
+    "#6366F1",
+    "#F97316",
+    "#22C55E",
+    "#EC4899",
+    "#14B8A6",
+    "#FACC15",
+  ];
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
-            <CardTitle>材料一覧</CardTitle>
-            <span className="text-sm text-muted-foreground">
-              {recipe.items.length} 件
-            </span>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>材料</TableHead>
-                  <TableHead className="text-right">使用量</TableHead>
-                  <TableHead className="text-right">コスト</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recipe.items.map((item) => {
-                  const breakdown = cost.breakdown.find(
-                    (entry) => entry.ingredientId === item.ingredientId
-                  );
-                  const ingredient = ingredients.find(
-                    (entry) => entry.id === item.ingredientId
-                  );
-
-                  return (
-                    <TableRow key={item.id ?? item.ingredientId}>
-                      <TableCell>
-                        <div className="font-medium">
-                          {ingredient?.name ?? `#${item.ingredientId}`}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          仕入単位: {ingredient?.purchaseUnit}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.quantity} {formatUnit(item.unit)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {breakdown
-                          ? `¥${breakdown.itemCostMinor.toLocaleString()}`
-                          : "-"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-              <TableCaption>
-                材料追加後にページを更新すると即時計算が反映されます。
-              </TableCaption>
-            </Table>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>材料を追加</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AddRecipeItemForm
-              recipe={recipe}
-              ingredients={ingredients}
-              action={action}
-              state={state}
-              pending={pending}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      <aside className="flex flex-col gap-6">
-        <CostSummary cost={cost} />
-        <CostBreakdown cost={cost} ingredients={ingredients} />
-      </aside>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border bg-muted/30 p-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-base font-semibold">{value}</div>
-    </div>
-  );
-}
-
-interface AddRecipeItemFormProps {
-  recipe: RecipeResponse;
-  ingredients: IngredientResponse[];
-  action: (
-    state: ActionState,
-    formData: FormData
-  ) => Promise<ActionState | void>;
-  state: ActionState;
-  pending: boolean;
-}
-
-function AddRecipeItemForm({
-  recipe,
-  ingredients,
-  action,
-  state,
-  pending,
-}: AddRecipeItemFormProps) {
-  const [selectedIngredient, setSelectedIngredient] = React.useState<number>(
-    ingredients[0]?.id ?? 0
-  );
-  const [quantity, setQuantity] = React.useState<number>(100);
-  const [unit, setUnit] = React.useState<string>(
-    ingredients[0]?.stockUnit ?? "g"
-  );
-
-  const matchedIngredient = ingredients.find(
-    (ingredient) => ingredient.id === selectedIngredient
-  );
-
-  React.useEffect(() => {
-    if (!matchedIngredient) {
-      return;
-    }
-    setUnit(matchedIngredient.stockUnit);
-  }, [matchedIngredient]);
-
-  if (ingredients.length === 0) {
-    return (
-      <div className="flex items-center gap-2 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-        <Info className="size-4" />
-        材料が登録されていないため追加できません。
-      </div>
+  const breakdown = cost.breakdown.map((item, index) => {
+    const ingredient = ingredients.find(
+      (entry) => entry.id === item.ingredientId
     );
-  }
+    const label = ingredient?.name ?? `材料 ${item.ingredientId}`;
+    const color = palette[index % palette.length];
+    const percentage =
+      totalCost > 0 ? (item.itemCostMinor / totalCost) * 100 : 0;
+
+    return {
+      label,
+      color,
+      value: item.itemCostMinor,
+      percentage,
+    };
+  });
 
   return (
-    <form action={action} className="space-y-4">
-      <input type="hidden" name="recipeId" value={recipe.id} />
-      <input type="hidden" name="version" value={recipe.version} />
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_140px]">
-        <Field>
-          <Label>材料</Label>
-          <select
-            name="ingredientId"
-            value={selectedIngredient}
-            onChange={(event) =>
-              setSelectedIngredient(Number(event.target.value))
-            }
-            className="border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 h-10 w-full rounded-md border px-3"
-          >
-            {ingredients.map((ingredient) => (
-              <option key={ingredient.id} value={ingredient.id}>
-                {ingredient.name}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field>
-          <Label>単位</Label>
-          <Input
-            name="unit"
-            value={unit}
-            onChange={(event) => setUnit(event.target.value)}
-            required
-          />
-        </Field>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{recipe.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            原価指標と材料内訳を確認できます。内容を変更する場合は編集画面をご利用ください。
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          <Button variant="ghost" asChild>
+            <Link href="/dashboard/recipes">一覧へ戻る</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/dashboard/recipes/${recipe.id}/edit`}>編集</Link>
+          </Button>
+        </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-[200px_minmax(0,1fr)]">
-        <Field>
-          <Label>使用量</Label>
-          <Input
-            name="quantity"
-            type="number"
-            min="0"
-            step="0.001"
-            value={quantity}
-            onChange={(event) => setQuantity(Number(event.target.value))}
-            required
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <CostHighlights
+          currencyFormatter={currencyFormatter}
+          unitCost={cost.unitCostMinor}
+          batchCost={cost.batchCostMinor}
+          portions={cost.portionsPerBatch}
+          costRatePercent={costRatePercent}
+          hasSellingPrice={Boolean(sellingPrice)}
+        />
+        <CostBreakdownCard
+          totalCost={totalCost}
+          breakdown={breakdown}
+          currencyFormatter={currencyFormatter}
+        />
+      </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <CardTitle>材料コスト明細</CardTitle>
+          <span className="text-sm text-muted-foreground">
+            {recipe.items.length} 件
+          </span>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>材料</TableHead>
+                <TableHead className="text-right">使用量</TableHead>
+                <TableHead className="text-right">材料コスト</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recipe.items.map((item) => {
+                const breakdownItem = cost.breakdown.find(
+                  (entry) => entry.ingredientId === item.ingredientId
+                );
+                const ingredient = ingredients.find(
+                  (entry) => entry.id === item.ingredientId
+                );
+
+                return (
+                  <TableRow key={item.id ?? item.ingredientId}>
+                    <TableCell>
+                      <div className="font-medium">
+                        {ingredient?.name ?? `材料 #${item.ingredientId}`}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        仕入単位: {ingredient?.purchaseUnit ?? "不明"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.quantity} {formatUnit(item.unit)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {breakdownItem
+                        ? `¥${currencyFormatter.format(
+                            breakdownItem.itemCostMinor
+                          )}`
+                        : "-"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+            <TableCaption>
+              材料の変更は編集画面から行ってください。
+            </TableCaption>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>レシピ情報</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Metric
+            label="仕上がり食数"
+            value={`${recipe.batchOutputQty} ${formatUnit(
+              recipe.batchOutputUnit
+            )}`}
           />
-        </Field>
-        <Field>
-          <Label>仕入単位</Label>
-          <Input
+          <Metric
+            label="提供可能数"
+            value={`${cost.portionsPerBatch} 食`}
+          />
+          <Metric
+            label="盛付歩留まり"
+            value={`${recipe.platingYieldRatePercent ?? 100}%`}
+          />
+          <Metric label="バージョン" value={`v${recipe.version}`} />
+          <Metric
+            label="販売価格"
             value={
-              matchedIngredient
-                ? formatUnit(matchedIngredient.purchaseUnit)
-                : ""
+              recipe.sellingPriceMinor !== undefined
+                ? `¥${currencyFormatter.format(recipe.sellingPriceMinor)}`
+                : "未設定"
             }
-            readOnly
-            className="bg-muted/50"
           />
-        </Field>
-      </div>
-      <Button type="submit" disabled={pending} className="w-full">
-        <PlusCircle className="mr-2 size-4" />
-        {pending ? "追加中..." : "材料を追加"}
-      </Button>
-      {state.error ? (
-        <p className="text-sm text-destructive">{state.error}</p>
-      ) : null}
-      {state.success ? (
-        <p className="text-sm text-emerald-600">{state.success}</p>
-      ) : null}
-    </form>
+          <Metric
+            label="税区分"
+            value={
+              recipe.sellingPriceTaxIncluded !== undefined
+                ? recipe.sellingPriceTaxIncluded
+                  ? "税込"
+                  : "税抜"
+                : "未設定"
+            }
+            helperText={
+              recipe.sellingTaxRatePercent !== undefined
+                ? `${recipe.sellingTaxRatePercent}%`
+                : undefined
+            }
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
-function CostSummary({ cost }: { cost: RecipeCostResult }) {
+function CostHighlights({
+  currencyFormatter,
+  unitCost,
+  batchCost,
+  portions,
+  costRatePercent,
+  hasSellingPrice,
+}: {
+  currencyFormatter: Intl.NumberFormat;
+  unitCost: number;
+  batchCost: number;
+  portions: number;
+  costRatePercent?: number;
+  hasSellingPrice: boolean;
+}) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>原価サマリー</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <SummaryRow
+      <CardContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric
+          label="1提供あたり原価"
+          value={`¥${currencyFormatter.format(unitCost)}`}
+        />
+        <Metric
           label="バッチ原価"
-          value={`¥${cost.batchCostMinor.toLocaleString()}`}
+          value={`¥${currencyFormatter.format(batchCost)}`}
         />
-        <SummaryRow
-          label="1提供あたり"
-          value={`¥${cost.unitCostMinor.toLocaleString()}`}
+        <Metric
+          label="提供可能数"
+          value={`${portions} 食`}
         />
-        <SummaryRow label="提供可能数" value={`${cost.portionsPerBatch} 食`} />
+        <Metric
+          label="原価率"
+          value={
+            costRatePercent !== undefined
+              ? `${costRatePercent.toFixed(1)}%`
+              : "販売価格未設定"
+          }
+          helperText={
+            hasSellingPrice
+              ? "1食原価 ÷ 販売価格で算出"
+              : undefined
+          }
+        />
       </CardContent>
     </Card>
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold text-foreground">{value}</span>
-    </div>
-  );
-}
-
-function CostBreakdown({
-  cost,
-  ingredients,
+function CostBreakdownCard({
+  totalCost,
+  breakdown,
+  currencyFormatter,
 }: {
-  cost: RecipeCostResult;
-  ingredients: IngredientResponse[];
+  totalCost: number;
+  breakdown: Array<{
+    label: string;
+    color: string;
+    value: number;
+    percentage: number;
+  }>;
+  currencyFormatter: Intl.NumberFormat;
 }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>材料別コスト内訳</CardTitle>
+        <CardTitle>材料別原価内訳</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {cost.breakdown.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            コスト計算に対応する材料がありません。
-          </p>
-        ) : (
-          cost.breakdown.map((item) => {
-            const ingredient = ingredients.find(
-              (entry) => entry.id === item.ingredientId
-            );
-            const label = ingredient?.name ?? `材料 ${item.ingredientId}`;
-
-            return (
-              <div
-                key={item.ingredientId}
-                className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2"
-              >
-                <div>
-                  <div className="text-sm font-medium">{label}</div>
-                  <div className="text-xs text-muted-foreground">
-                    実使用量: {item.actualQty.toFixed(2)}
+      <CardContent className="flex flex-col items-center gap-4">
+        {totalCost > 0 ? (
+          <>
+            <DonutChart
+              data={breakdown.map(({ value, color, label }) => ({
+                value,
+                color,
+                label,
+              }))}
+              centerLabel={
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-muted-foreground">
+                    バッチ原価
+                  </span>
+                  <span className="text-sm font-semibold text-foreground">
+                    ¥{currencyFormatter.format(totalCost)}
+                  </span>
+                </div>
+              }
+            />
+            <ul className="w-full space-y-2 text-sm">
+              {breakdown.map((item) => (
+                <li
+                  key={item.label}
+                  className="flex items-center justify-between rounded-md border px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="size-2.5 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                      aria-hidden="true"
+                    />
+                    <span className="font-medium text-foreground">
+                      {item.label}
+                    </span>
                   </div>
-                </div>
-                <div className="text-sm font-semibold">
-                  ¥{item.itemCostMinor.toLocaleString()}
-                </div>
-              </div>
-            );
-          })
+                  <div className="text-right text-muted-foreground">
+                    <div>¥{currencyFormatter.format(item.value)}</div>
+                    <div className="text-xs">
+                      {item.percentage.toFixed(1)}%
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            原価内訳を計算するための材料コストがありません。
+          </p>
         )}
       </CardContent>
     </Card>
   );
 }
 
-function Field({ children }: { children: React.ReactNode }) {
-  return <div className="space-y-2">{children}</div>;
+function Metric({
+  label,
+  value,
+  helperText,
+}: {
+  label: string;
+  value: string;
+  helperText?: string;
+}) {
+  return (
+    <div className="rounded-lg border bg-muted/30 p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-base font-semibold text-foreground">{value}</div>
+      {helperText ? (
+        <div className="text-[11px] text-muted-foreground/80 mt-1">
+          {helperText}
+        </div>
+      ) : null}
+    </div>
+  );
 }

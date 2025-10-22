@@ -1,28 +1,40 @@
+import { z } from 'zod';
+
 import { createRecipe } from '@/domain/recipe/recipe';
 import { Money } from '@/domain/shared/money';
 import { createQuantity } from '@/domain/shared/unit';
 import { RecipeRepository } from '@/infrastructure/repositories/recipe.repo';
 import { requireTeamContext } from '@/lib/auth/team';
 import { recipeToResponse } from './presenter';
-import {
-  recipePayloadSchema,
-  type RecipePayloadInput,
-} from './schema';
+import { recipePayloadSchema } from './schema';
 
-export type CreateRecipeInput = RecipePayloadInput;
+const updateSchema = recipePayloadSchema.extend({
+  id: z.coerce.number().int().positive(),
+  version: z.coerce.number().int().positive(),
+});
+
+export type UpdateRecipeInput = z.infer<typeof updateSchema>;
 
 const repository = new RecipeRepository();
 
-export async function createRecipeEntry(input: CreateRecipeInput) {
-  const data = recipePayloadSchema.parse(input);
+export async function updateRecipeEntry(input: UpdateRecipeInput) {
+  const data = updateSchema.parse(input);
   const { teamId } = await requireTeamContext();
+
+  const existing = await repository.findById(teamId, data.id);
+  if (!existing) {
+    throw new Error('レシピが見つかりません');
+  }
+
+  if (existing.version !== data.version) {
+    throw new Error('最新のレシピではありません。画面を更新してください。');
+  }
 
   const batchOutput = createQuantity(data.batchOutputQty, data.batchOutputUnit);
   const servingSize = createQuantity(data.servingSizeQty, data.servingSizeUnit);
 
-  const recipe = createRecipe({
-    id: 0,
-    teamId,
+  const updated = createRecipe({
+    ...existing,
     name: data.name,
     batchOutput,
     servingSize,
@@ -32,14 +44,14 @@ export async function createRecipeEntry(input: CreateRecipeInput) {
       : undefined,
     sellingPriceTaxIncluded: data.sellingPriceTaxIncluded,
     sellingTaxRatePercent: data.sellingTaxRatePercent,
-    version: 1,
     items: data.items.map((item) => ({
       ingredientId: item.ingredientId,
       quantity: createQuantity(item.quantity, item.unit),
       wasteRate: item.wasteRate,
     })),
+    version: existing.version,
   });
 
-  const saved = await repository.create(recipe);
+  const saved = await repository.save(updated);
   return recipeToResponse(saved);
 }

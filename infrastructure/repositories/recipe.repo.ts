@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, ilike } from 'drizzle-orm';
 
 import { db } from '@/lib/db/drizzle';
 import { recipeItems, recipes } from '@/lib/db/schema';
@@ -12,10 +12,26 @@ import {
 import { ValidationError } from '@/domain/shared/errors';
 import { Recipe as RecipeAggregate } from '@/domain/recipe/recipe';
 
+const escapeLikePattern = (value: string) => value.replace(/[%_]/g, '\\$&');
+
+type ListOptions = {
+  search?: string;
+};
+
 export class RecipeRepository {
-  async listByTeam(teamId: number): Promise<RecipeAggregate[]> {
+  async listByTeam(
+    teamId: number,
+    options: ListOptions = {},
+  ): Promise<RecipeAggregate[]> {
+    const where = options.search
+      ? and(
+          eq(recipes.teamId, teamId),
+          ilike(recipes.name, `%${escapeLikePattern(options.search)}%`),
+        )
+      : eq(recipes.teamId, teamId);
+
     const rows = await db.query.recipes.findMany({
-      where: eq(recipes.teamId, teamId),
+      where,
       with: {
         items: true,
       },
@@ -128,5 +144,24 @@ export class RecipeRepository {
     await db.insert(recipeItems).values(
       toRecipeItemInsertRow(recipeId, item),
     );
+  }
+
+  async delete(teamId: number, id: number, version: number): Promise<void> {
+    const [row] = await db
+      .delete(recipes)
+      .where(
+        and(
+          eq(recipes.id, id),
+          eq(recipes.teamId, teamId),
+          eq(recipes.version, version),
+        ),
+      )
+      .returning({ id: recipes.id });
+
+    if (!row) {
+      throw new ValidationError(
+        'Recipe deletion failed due to concurrent modification',
+      );
+    }
   }
 }

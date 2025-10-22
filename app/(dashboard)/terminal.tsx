@@ -7,12 +7,11 @@ export function Terminal() {
   const [terminalStep, setTerminalStep] = useState(0);
   const [copied, setCopied] = useState(false);
   const terminalSteps = [
-    'git clone https://github.com/nextjs/saas-starter',
-    'pnpm install',
-    'pnpm db:setup',
-    'pnpm db:migrate',
-    'pnpm db:seed',
-    'pnpm dev 🎉',
+    'レシピ「季節のタルト」を同期中...',
+    '仕入価格を更新: 1kg あたり ¥1,280 → ¥1,210',
+    '歩留まり 92% を反映して原価を再計算',
+    '粗利率 64.2% | 売価 ¥1,480',
+    'ダッシュボードを最新状態に更新 ✅',
   ];
 
   useEffect(() => {

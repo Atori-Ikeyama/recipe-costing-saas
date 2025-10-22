@@ -1,7 +1,20 @@
-import { listIngredients } from "@/application/ingredients";
-import { IngredientsDashboard } from "./view";
+import { listIngredients } from '@/application/ingredients';
+import { IngredientsDashboard } from './view';
 
-export default async function IngredientsPage() {
-  const ingredients = await listIngredients();
-  return <IngredientsDashboard initialIngredients={ingredients} />;
+type PageProps = {
+  searchParams?: {
+    q?: string | string[];
+  };
+};
+
+export default async function IngredientsPage({ searchParams }: PageProps) {
+  const rawQuery = searchParams?.q;
+  const query = typeof rawQuery === 'string' ? rawQuery : undefined;
+  const ingredients = await listIngredients({ query });
+  return (
+    <IngredientsDashboard
+      initialIngredients={ingredients}
+      initialQuery={query ?? ''}
+    />
+  );
 }

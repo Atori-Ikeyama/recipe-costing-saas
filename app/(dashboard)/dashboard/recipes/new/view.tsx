@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2, PlusCircle } from "lucide-react";
 
 import type { IngredientResponse } from "@/application/ingredients/presenter";
@@ -56,6 +57,7 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
     createRecipeAction,
     defaultActionState
   );
+  const router = useRouter();
 
   const handleAddItem = React.useCallback(() => {
     setItems((prev) => [...prev, createDefaultItem(ingredients)]);
@@ -356,6 +358,14 @@ export function RecipeComposer({ ingredients }: RecipeComposerProps) {
               <div className="flex items-center gap-3">
                 <Button type="submit" disabled={pending}>
                   {pending ? "作成中..." : "レシピを作成"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={pending}
+                >
+                  キャンセル
                 </Button>
                 {state.error ? (
                   <p className="text-sm text-destructive">{state.error}</p>
