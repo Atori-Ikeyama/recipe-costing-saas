@@ -31,37 +31,34 @@ export function Terminal() {
   };
 
   return (
-    <div className="w-full rounded-lg shadow-lg overflow-hidden bg-gray-900 text-white font-mono text-sm relative">
-      <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex space-x-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-          </div>
-          <button
-            onClick={copyToClipboard}
-            className="text-gray-400 hover:text-white transition-colors"
-            aria-label="Copy to clipboard"
-          >
-            {copied ? (
-              <Check className="h-5 w-5" />
-            ) : (
-              <Copy className="h-5 w-5" />
-            )}
-          </button>
+    <div className="relative w-full overflow-hidden rounded-[28px] border border-[#E8E8E6] bg-white/95 p-6 font-mono text-sm text-[#2B2B2B] shadow-[0_20px_60px_-30px_rgba(232,90,79,0.35)]">
+      <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#E8E8E6] to-transparent" />
+      <div className="flex items-center justify-between pb-6">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#E85A4F]/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#4F9D69]/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#E8B04F]/80" />
         </div>
-        <div className="space-y-2">
-          {terminalSteps.map((step, index) => (
-            <div
-              key={index}
-              className={`${index > terminalStep ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-            >
-              <span className="text-green-400">$</span> {step}
-            </div>
-          ))}
-        </div>
+        <button
+          onClick={copyToClipboard}
+          className="rounded-full border border-[#E8E8E6] bg-[#FAFAF9] p-2 text-[#2B2B2B]/60 transition hover:border-[#E85A4F]/40 hover:text-[#E85A4F]"
+          aria-label="クリップボードにコピー"
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        </button>
       </div>
+      <div className="space-y-3">
+        {terminalSteps.map((step, index) => (
+          <div
+            key={index}
+            className={`${index > terminalStep ? 'translate-y-2 opacity-0' : 'translate-y-0 opacity-100'} flex items-start gap-3 text-[#2B2B2B]/80 transition-all duration-300`}
+          >
+            <span className="mt-0.5 text-[#E85A4F]">$</span>
+            <span>{step}</span>
+          </div>
+        ))}
+      </div>
+      <div className="absolute inset-x-6 bottom-0 h-px bg-gradient-to-r from-transparent via-[#E8E8E6] to-transparent" />
     </div>
   );
 }

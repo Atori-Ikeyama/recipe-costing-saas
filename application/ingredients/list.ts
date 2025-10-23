@@ -1,8 +1,10 @@
 import { IngredientRepository } from '@/infrastructure/repositories/ingredient.repo';
 import { requireTeamContext } from '@/lib/auth/team';
 import { ingredientToResponse } from './presenter';
+import { SupplierRepository } from '@/infrastructure/repositories/supplier.repo';
 
 const repository = new IngredientRepository();
+const supplierRepository = new SupplierRepository();
 
 type ListIngredientsOptions = {
   query?: string;
@@ -26,6 +28,23 @@ export async function listIngredients(
 ) {
   const { teamId } = await requireTeamContext();
   const search = normalizeQuery(options.query);
-  const ingredients = await repository.listByTeam(teamId, { search });
-  return ingredients.map(ingredientToResponse);
+  const [ingredients, suppliers] = await Promise.all([
+    repository.listByTeam(teamId, { search }),
+    supplierRepository.listByTeam(teamId),
+  ]);
+
+  const supplierMap = new Map(
+    suppliers.map((supplier) => [supplier.id, supplier]),
+  );
+
+  return ingredients.map((ingredient) => {
+    const supplier = ingredient.supplierId
+      ? supplierMap.get(ingredient.supplierId)
+      : undefined;
+
+    return ingredientToResponse(ingredient, {
+      supplierName: supplier?.name,
+      supplierLeadTimeDays: supplier?.leadTimeDays,
+    });
+  });
 }

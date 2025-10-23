@@ -4,77 +4,54 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { useActionState } from "react";
 import {
-  useReactTable,
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  useReactTable,
 } from "@tanstack/react-table";
-import { PlusCircle, PencilLine, Trash2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { PlusCircle, PencilLine, Trash2 } from "lucide-react";
 
-import type { IngredientResponse } from "@/application/ingredients/presenter";
 import type { SupplierResponse } from "@/application/suppliers/presenter";
 import {
-  createIngredientAction,
-  updateIngredientAction,
-  deleteIngredientAction,
+  createSupplierAction,
+  updateSupplierAction,
+  deleteSupplierAction,
 } from "./actions";
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
-  TableHead,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type IngredientActionState = {
+type SupplierActionState = {
   error?: string;
   success?: string;
 };
 
-interface IngredientsDashboardProps {
-  initialIngredients: IngredientResponse[];
+interface SuppliersDashboardProps {
+  initialSuppliers: SupplierResponse[];
   initialQuery: string;
-  supplierOptions: SupplierResponse[];
 }
 
-const defaultActionState: IngredientActionState = {};
-const DEFAULT_STOCK_UNIT = "g";
-const purchaseUnitOptions = [
-  { value: "g", label: "グラム (g)", conversionToStock: 1 },
-  { value: "kg", label: "キログラム (kg)", conversionToStock: 1000 },
-  { value: "mg", label: "ミリグラム (mg)", conversionToStock: 0.001 },
-  { value: "ml", label: "ミリリットル (ml)", conversionToStock: 1 },
-  { value: "l", label: "リットル (l)", conversionToStock: 1000 },
-  { value: "ea", label: "個数 (ea)", conversionToStock: 1 },
-];
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
-
 type FormMode =
-  | {
-      mode: "create";
-      ingredient: null;
-    }
-  | {
-      mode: "edit";
-      ingredient: IngredientResponse;
-    }
-  | {
-      mode: "delete";
-      ingredient: IngredientResponse;
-    };
+  | { mode: "create"; supplier: null }
+  | { mode: "edit"; supplier: SupplierResponse }
+  | { mode: "delete"; supplier: SupplierResponse };
 
-export function IngredientsDashboard({
-  initialIngredients,
+const defaultActionState: SupplierActionState = {};
+
+export function SuppliersDashboard({
+  initialSuppliers,
   initialQuery,
-  supplierOptions,
-}: IngredientsDashboardProps) {
+}: SuppliersDashboardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -94,20 +71,19 @@ export function IngredientsDashboard({
     searchValue.trim().length > 0 || trimmedInitialQuery.length > 0;
 
   const [selectedId, setSelectedId] = React.useState<number | null>(
-    initialIngredients.length > 0 ? initialIngredients[0]!.id : null
+    initialSuppliers.length > 0 ? initialSuppliers[0]!.id : null
   );
-  const [ingredients, setIngredients] = React.useState(initialIngredients);
-  const suppliers = supplierOptions;
+  const [suppliers, setSuppliers] = React.useState(initialSuppliers);
   const [createState, createAction, createPending] = useActionState(
-    createIngredientAction,
+    createSupplierAction,
     defaultActionState
   );
   const [updateState, updateAction, updatePending] = useActionState(
-    updateIngredientAction,
+    updateSupplierAction,
     defaultActionState
   );
   const [deleteState, deleteAction, deletePending] = useActionState(
-    deleteIngredientAction,
+    deleteSupplierAction,
     defaultActionState
   );
   const [formState, setFormState] = React.useState<FormMode | null>(null);
@@ -160,29 +136,28 @@ export function IngredientsDashboard({
   }, [applySearchParam, searchValue, trimmedInitialQuery]);
 
   React.useEffect(() => {
-    setIngredients(initialIngredients);
-  }, [initialIngredients]);
-
-  const supplierMap = React.useMemo(
-    () => new Map(suppliers.map((supplier) => [supplier.id, supplier])),
-    [suppliers]
-  );
+    setSuppliers(initialSuppliers);
+  }, [initialSuppliers]);
 
   React.useEffect(() => {
     if (formState?.mode !== "edit") {
       return;
     }
 
-    const updated = initialIngredients.find(
-      (item) => item.id === formState.ingredient.id
+    const updated = initialSuppliers.find(
+      (item) => item.id === formState.supplier.id
     );
-    if (updated && updated.version !== formState.ingredient.version) {
-      setFormState({ mode: "edit", ingredient: updated });
+    if (
+      updated &&
+      (updated.name !== formState.supplier.name ||
+        updated.leadTimeDays !== formState.supplier.leadTimeDays)
+    ) {
+      setFormState({ mode: "edit", supplier: updated });
     }
-  }, [initialIngredients, formState]);
+  }, [initialSuppliers, formState]);
 
   React.useEffect(() => {
-    if (initialIngredients.length === 0) {
+    if (initialSuppliers.length === 0) {
       if (selectedId !== null) {
         setSelectedId(null);
       }
@@ -192,30 +167,24 @@ export function IngredientsDashboard({
       return;
     }
 
-    if (
-      !selectedId ||
-      !initialIngredients.some((item) => item.id === selectedId)
-    ) {
-      setSelectedId(initialIngredients[0]!.id);
+    if (!selectedId || !initialSuppliers.some((item) => item.id === selectedId)) {
+      setSelectedId(initialSuppliers[0]!.id);
     }
-  }, [initialIngredients, selectedId, formState]);
+  }, [initialSuppliers, selectedId, formState]);
 
   const openCreateModal = React.useCallback(() => {
-    setFormState({ mode: "create", ingredient: null });
+    setFormState({ mode: "create", supplier: null });
   }, []);
 
-  const openEditModal = React.useCallback((ingredient: IngredientResponse) => {
-    setSelectedId(ingredient.id);
-    setFormState({ mode: "edit", ingredient });
+  const openEditModal = React.useCallback((supplier: SupplierResponse) => {
+    setSelectedId(supplier.id);
+    setFormState({ mode: "edit", supplier });
   }, []);
 
-  const openDeleteModal = React.useCallback(
-    (ingredient: IngredientResponse) => {
-      setSelectedId(ingredient.id);
-      setFormState({ mode: "delete", ingredient });
-    },
-    []
-  );
+  const openDeleteModal = React.useCallback((supplier: SupplierResponse) => {
+    setSelectedId(supplier.id);
+    setFormState({ mode: "delete", supplier });
+  }, []);
 
   const closeModal = React.useCallback(() => {
     setFormState(null);
@@ -231,12 +200,11 @@ export function IngredientsDashboard({
         type: "form" as const,
         props: {
           key: "create",
-          title: "材料を登録",
+          title: "仕入先を登録",
           action: createAction,
           state: createState,
           pending: createPending,
           defaultValues: undefined,
-          suppliers,
         },
       };
     }
@@ -245,13 +213,12 @@ export function IngredientsDashboard({
       return {
         type: "form" as const,
         props: {
-          key: formState.ingredient.id,
-          title: `${formState.ingredient.name} を編集`,
+          key: formState.supplier.id,
+          title: `${formState.supplier.name} を編集`,
           action: updateAction,
           state: updateState,
           pending: updatePending,
-          defaultValues: formState.ingredient,
-          suppliers,
+          defaultValues: formState.supplier,
         },
       };
     }
@@ -259,7 +226,7 @@ export function IngredientsDashboard({
     return {
       type: "delete" as const,
       props: {
-        ingredient: formState.ingredient,
+        supplier: formState.supplier,
         action: deleteAction,
         state: deleteState,
         pending: deletePending,
@@ -276,65 +243,23 @@ export function IngredientsDashboard({
     deleteAction,
     deleteState,
     deletePending,
-    suppliers,
   ]);
 
-  const columns = React.useMemo<ColumnDef<IngredientResponse>[]>(
+  const columns = React.useMemo<ColumnDef<SupplierResponse>[]>(
     () => [
       {
         accessorKey: "name",
-        header: "材料名",
+        header: "仕入先名",
         cell: ({ row }) => (
           <div className="font-medium text-foreground">{row.original.name}</div>
         ),
       },
       {
-        accessorKey: "purchaseQty",
-        header: "仕入単位",
+        accessorKey: "leadTimeDays",
+        header: "リードタイム",
         cell: ({ row }) => (
           <div className="text-muted-foreground">
-            {row.original.purchaseQty} {row.original.purchaseUnit}
-          </div>
-        ),
-      },
-      {
-        accessorKey: "purchasePriceMinor",
-        header: "仕入価格",
-        cell: ({ row }) => (
-          <div className="text-foreground">
-            ¥{row.original.purchasePriceMinor.toLocaleString()} (税込)
-          </div>
-        ),
-      },
-      {
-        id: "supplier",
-        header: "仕入先",
-        cell: ({ row }) => {
-          const related =
-            row.original.supplierId !== undefined && row.original.supplierId !== null
-              ? supplierMap.get(row.original.supplierId)
-              : undefined;
-          const resolvedName = row.original.supplierName ?? related?.name;
-          const leadTime =
-            row.original.supplierLeadTimeDays ?? related?.leadTimeDays;
-          return (
-            <div className="text-foreground">
-              {resolvedName ?? "未設定"}
-              {leadTime !== undefined ? (
-                <span className="ml-1 text-xs text-muted-foreground">
-                  (リードタイム: {leadTime}日)
-                </span>
-              ) : null}
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "yieldRatePercent",
-        header: "歩留まり",
-        cell: ({ row }) => (
-          <div className="text-muted-foreground">
-            {row.original.yieldRatePercent}%
+            {row.original.leadTimeDays} 日
           </div>
         ),
       },
@@ -350,7 +275,7 @@ export function IngredientsDashboard({
                 event.stopPropagation();
                 openEditModal(row.original);
               }}
-              aria-label="材料を編集"
+              aria-label="仕入先を編集"
               title="編集"
             >
               <PencilLine className="size-4" />
@@ -362,7 +287,7 @@ export function IngredientsDashboard({
                 event.stopPropagation();
                 openDeleteModal(row.original);
               }}
-              aria-label="材料を削除"
+              aria-label="仕入先を削除"
               title="削除"
             >
               <Trash2 className="size-4 text-destructive" />
@@ -370,12 +295,12 @@ export function IngredientsDashboard({
           </div>
         ),
       },
-  ],
-    [openEditModal, openDeleteModal, supplierMap]
+    ],
+    [openEditModal, openDeleteModal]
   );
 
   const table = useReactTable({
-    data: ingredients,
+    data: suppliers,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -385,7 +310,7 @@ export function IngredientsDashboard({
       <Card className="border-none shadow-none">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-            <CardTitle className="shrink-0">材料一覧</CardTitle>
+            <CardTitle className="shrink-0">仕入先一覧</CardTitle>
             <form
               onSubmit={handleSubmit}
               className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 sm:max-w-lg"
@@ -394,10 +319,10 @@ export function IngredientsDashboard({
                 name="q"
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="材料名で検索"
+                placeholder="仕入先名で検索"
                 className="h-9 sm:flex-1"
                 autoComplete="off"
-                aria-label="材料名で検索"
+                aria-label="仕入先名で検索"
               />
               <div className="flex gap-2 sm:w-auto">
                 <Button
@@ -472,7 +397,7 @@ export function IngredientsDashboard({
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                    材料が登録されていません。新規追加から登録してください。
+                    仕入先が登録されていません。新規追加から登録してください。
                   </TableCell>
                 </TableRow>
               )}
@@ -480,72 +405,59 @@ export function IngredientsDashboard({
           </Table>
         </CardContent>
       </Card>
-      <IngredientModal open={isModalOpen} onClose={closeModal}>
+      <SupplierModal open={isModalOpen} onClose={closeModal}>
         {modalContent?.type === "form" ? (
-          <IngredientForm
+          <SupplierForm
             key={modalContent.props.key}
             title={modalContent.props.title}
             action={modalContent.props.action}
             state={modalContent.props.state}
             pending={modalContent.props.pending}
             defaultValues={modalContent.props.defaultValues}
-            suppliers={suppliers}
             onCancel={closeModal}
           />
         ) : null}
         {modalContent?.type === "delete" ? (
-          <DeleteIngredientConfirm
-            key={`delete-${modalContent.props.ingredient.id}`}
-            ingredient={modalContent.props.ingredient}
+          <DeleteSupplierConfirm
+            key={`delete-${modalContent.props.supplier.id}`}
+            supplier={modalContent.props.supplier}
             action={modalContent.props.action}
             state={modalContent.props.state}
             pending={modalContent.props.pending}
             onCancel={closeModal}
             onSuccess={() => {
-              const targetId = modalContent.props.ingredient.id;
+              const targetId = modalContent.props.supplier.id;
               setSelectedId((current) =>
                 current === targetId ? null : current
               );
             }}
           />
         ) : null}
-      </IngredientModal>
+      </SupplierModal>
     </div>
   );
 }
 
-interface IngredientFormProps {
+interface SupplierFormProps {
   title: string;
   action: (
-    state: IngredientActionState,
+    state: SupplierActionState,
     formData: FormData
-  ) => Promise<IngredientActionState>;
-  state: IngredientActionState;
+  ) => Promise<SupplierActionState>;
+  state: SupplierActionState;
   pending: boolean;
-  defaultValues?: IngredientResponse;
+  defaultValues?: SupplierResponse;
   onCancel?: () => void;
-  suppliers: SupplierResponse[];
 }
 
-function IngredientForm({
+function SupplierForm({
   title,
   action,
   state,
   pending,
   defaultValues,
   onCancel,
-  suppliers,
-}: IngredientFormProps) {
-  const initialUnit = defaultValues?.purchaseUnit ?? DEFAULT_STOCK_UNIT;
-  const fallbackOption =
-    purchaseUnitOptions.find((option) => option.value === initialUnit) ??
-    purchaseUnitOptions[0];
-  const initialConversion = defaultValues
-    ? String(defaultValues.convPurchaseToStock)
-    : String(fallbackOption?.conversionToStock ?? 1);
-
-  const [purchaseUnit, setPurchaseUnit] = React.useState(initialUnit);
-  const [conversion, setConversion] = React.useState(initialConversion);
+}: SupplierFormProps) {
   const [hasSubmitted, setHasSubmitted] = React.useState(false);
 
   React.useEffect(() => {
@@ -554,30 +466,8 @@ function IngredientForm({
     }
   }, [hasSubmitted, state.success, onCancel]);
 
-  React.useEffect(() => {
-    const nextUnit = defaultValues?.purchaseUnit ?? DEFAULT_STOCK_UNIT;
-    setPurchaseUnit(nextUnit);
-    if (defaultValues?.convPurchaseToStock !== undefined) {
-      setConversion(String(defaultValues.convPurchaseToStock));
-      return;
-    }
-    const option =
-      purchaseUnitOptions.find((item) => item.value === nextUnit) ??
-      purchaseUnitOptions[0];
-    setConversion(option ? option.conversionToStock.toString() : "1");
-  }, [defaultValues]);
-
-  const handlePurchaseUnitChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const nextUnit = event.target.value;
-    setPurchaseUnit(nextUnit);
-    const option = purchaseUnitOptions.find((item) => item.value === nextUnit);
-    setConversion(option ? option.conversionToStock.toString() : "1");
-  };
-
   return (
-    <Card className="sticky top-24 h-fit">
+    <Card className="h-fit">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
@@ -590,122 +480,38 @@ function IngredientForm({
           }}
         >
           {defaultValues ? (
-            <>
-              <input type="hidden" name="id" value={defaultValues.id} />
-              <input
-                type="hidden"
-                name="version"
-                value={defaultValues.version}
-              />
-            </>
+            <input type="hidden" name="id" value={defaultValues.id} />
           ) : null}
           <Field>
-            <Label htmlFor="name">材料名</Label>
+            <Label htmlFor="name">仕入先名</Label>
             <Input
               id="name"
               name="name"
-              required
               defaultValue={defaultValues?.name ?? ""}
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field>
-              <Label htmlFor="purchaseUnit">仕入単位</Label>
-              <select
-                id="purchaseUnit"
-                name="purchaseUnit"
-                required
-                value={purchaseUnit}
-                onChange={handlePurchaseUnitChange}
-                className={selectClassName}
-              >
-                <option value="" disabled>
-                  単位を選択
-                </option>
-                {purchaseUnitOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field>
-              <Label htmlFor="purchaseQty">仕入数量</Label>
-              <Input
-                id="purchaseQty"
-                name="purchaseQty"
-                type="number"
-                step="0.001"
-                min="0"
-                required
-                defaultValue={defaultValues?.purchaseQty ?? ""}
-              />
-            </Field>
-          </div>
-          <Field>
-            <Label htmlFor="purchasePriceMinor">仕入価格 (税込)</Label>
-            <Input
-              id="purchasePriceMinor"
-              name="purchasePriceMinor"
-              type="number"
-              min="0"
+              placeholder="株式会社〇〇商店"
+              autoFocus
               required
-              defaultValue={defaultValues?.purchasePriceMinor ?? ""}
             />
           </Field>
-          <input type="hidden" name="convPurchaseToStock" value={conversion} />
           <Field>
-            <Label htmlFor="yieldRatePercent">歩留まり(%)</Label>
+            <Label htmlFor="leadTimeDays">リードタイム（日）</Label>
             <Input
-              id="yieldRatePercent"
-              name="yieldRatePercent"
+              id="leadTimeDays"
+              name="leadTimeDays"
               type="number"
-              step="0.01"
-              min="0.01"
-              max="100"
+              min={0}
+              step={1}
+              defaultValue={defaultValues?.leadTimeDays ?? 0}
               required
-              defaultValue={defaultValues?.yieldRatePercent ?? 100}
             />
           </Field>
-          <Field>
-            <Label htmlFor="supplierId">仕入先</Label>
-            <select
-              id="supplierId"
-              name="supplierId"
-              defaultValue={
-                defaultValues?.supplierId !== undefined &&
-                defaultValues?.supplierId !== null
-                  ? String(defaultValues.supplierId)
-                  : ""
-              }
-              className={selectClassName}
-            >
-              <option value="">未設定</option>
-              {suppliers.map((supplier) => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.name}
-                  {supplier.leadTimeDays !== undefined
-                    ? ` (リードタイム: ${supplier.leadTimeDays}日)`
-                    : ""}
-                </option>
-              ))}
-            </select>
-            {suppliers.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                仕入先が未登録の場合は「仕入先」ページから追加できます。
-              </p>
-            ) : null}
-          </Field>
-          <input type="hidden" name="stockUnit" value={DEFAULT_STOCK_UNIT} />
           <div className="flex gap-2">
             <Button type="submit" disabled={pending} className="flex-1">
               {pending ? "保存中..." : "保存"}
             </Button>
-            {onCancel ? (
-              <Button type="button" variant="outline" onClick={onCancel}>
-                キャンセル
-              </Button>
-            ) : null}
+            <Button type="button" variant="outline" onClick={onCancel}>
+              キャンセル
+            </Button>
           </div>
           {hasSubmitted && state.error ? (
             <p className="text-sm text-destructive">{state.error}</p>
@@ -719,20 +525,20 @@ function IngredientForm({
   );
 }
 
-function DeleteIngredientConfirm({
-  ingredient,
+function DeleteSupplierConfirm({
+  supplier,
   action,
   state,
   pending,
   onCancel,
   onSuccess,
 }: {
-  ingredient: IngredientResponse;
+  supplier: SupplierResponse;
   action: (
-    state: IngredientActionState,
+    state: SupplierActionState,
     formData: FormData
-  ) => Promise<IngredientActionState>;
-  state: IngredientActionState;
+  ) => Promise<SupplierActionState>;
+  state: SupplierActionState;
   pending: boolean;
   onCancel: () => void;
   onSuccess: () => void;
@@ -749,7 +555,7 @@ function DeleteIngredientConfirm({
   return (
     <Card className="h-fit">
       <CardHeader>
-        <CardTitle>材料を削除</CardTitle>
+        <CardTitle>仕入先を削除</CardTitle>
       </CardHeader>
       <CardContent>
         <form
@@ -759,10 +565,9 @@ function DeleteIngredientConfirm({
             setHasSubmitted(true);
           }}
         >
-          <input type="hidden" name="id" value={ingredient.id} />
-          <input type="hidden" name="version" value={ingredient.version} />
+          <input type="hidden" name="id" value={supplier.id} />
           <p className="text-sm text-muted-foreground">
-            {`「${ingredient.name}」を削除すると、この材料はレシピで利用できなくなります。関連レシピがある場合は先に材料を置き換えてから削除してください。`}
+            {`「${supplier.name}」を削除すると、この仕入先を割り当てた材料では使用できなくなります。削除前に材料の仕入先を変更してから進めてください。`}
           </p>
           <div className="flex gap-2">
             <Button
@@ -790,7 +595,7 @@ function Field({ children }: { children: React.ReactNode }) {
   return <div className="space-y-2">{children}</div>;
 }
 
-function IngredientModal({
+function SupplierModal({
   open,
   onClose,
   children,

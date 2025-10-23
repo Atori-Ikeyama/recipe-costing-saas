@@ -119,7 +119,7 @@ export function RecipeListView({ recipes, initialQuery }: RecipeListViewProps) {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="border-none shadow-none">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
             <CardTitle className="shrink-0">レシピ一覧</CardTitle>

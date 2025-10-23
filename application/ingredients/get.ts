@@ -1,8 +1,10 @@
 import { IngredientRepository } from '@/infrastructure/repositories/ingredient.repo';
 import { requireTeamContext } from '@/lib/auth/team';
 import { ingredientToResponse } from './presenter';
+import { SupplierRepository } from '@/infrastructure/repositories/supplier.repo';
 
 const repository = new IngredientRepository();
+const supplierRepository = new SupplierRepository();
 
 export async function getIngredient(id: number) {
   const { teamId } = await requireTeamContext();
@@ -11,5 +13,12 @@ export async function getIngredient(id: number) {
     throw new Error('材料が見つかりません');
   }
 
-  return ingredientToResponse(ingredient);
+  const supplier = ingredient.supplierId
+    ? await supplierRepository.findById(teamId, ingredient.supplierId)
+    : undefined;
+
+  return ingredientToResponse(ingredient, {
+    supplierName: supplier?.name,
+    supplierLeadTimeDays: supplier?.leadTimeDays,
+  });
 }

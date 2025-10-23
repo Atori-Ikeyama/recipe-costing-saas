@@ -13,6 +13,7 @@ import {
   Carrot,
   UtensilsCrossed,
   ShoppingCart,
+  Factory,
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -24,15 +25,15 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navItems = [
-    { href: "/dashboard/ingredients", icon: Carrot, label: "材料" },
-    { href: "/dashboard/recipes", icon: UtensilsCrossed, label: "レシピ" },
     {
-      href: "/dashboard/procurement",
+      href: "/dashboard",
       icon: ShoppingCart,
-      label: "仕入計画",
-      dividerAfter: true,
+      label: "ホーム",
     },
-    { href: "/dashboard", icon: Users, label: "チーム" },
+    { href: "/dashboard/ingredients", icon: Carrot, label: "材料" },
+    { href: "/dashboard/suppliers", icon: Factory, label: "仕入先" },
+    { href: "/dashboard/recipes", icon: UtensilsCrossed, label: "レシピ" },
+    { href: "/dashboard/team", icon: Users, label: "チーム" },
     { href: "/dashboard/general", icon: Settings, label: "基本設定" },
     { href: "/dashboard/security", icon: Shield, label: "セキュリティ" },
   ];

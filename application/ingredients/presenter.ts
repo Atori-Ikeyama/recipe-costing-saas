@@ -10,10 +10,20 @@ export interface IngredientResponse {
   convPurchaseToStock: number;
   yieldRatePercent: number;
   supplierId?: number;
+  supplierName?: string;
+  supplierLeadTimeDays?: number;
   version: number;
 }
 
-export function ingredientToResponse(ingredient: Ingredient): IngredientResponse {
+type IngredientResponseExtras = {
+  supplierName?: string;
+  supplierLeadTimeDays?: number;
+};
+
+export function ingredientToResponse(
+  ingredient: Ingredient,
+  extras: IngredientResponseExtras = {},
+): IngredientResponse {
   return {
     id: ingredient.id,
     name: ingredient.name,
@@ -24,6 +34,8 @@ export function ingredientToResponse(ingredient: Ingredient): IngredientResponse
     convPurchaseToStock: ingredient.conversion.factor,
     yieldRatePercent: ingredient.yieldRatePercent,
     supplierId: ingredient.supplierId,
+    supplierName: extras.supplierName,
+    supplierLeadTimeDays: extras.supplierLeadTimeDays,
     version: ingredient.version,
   };
 }
