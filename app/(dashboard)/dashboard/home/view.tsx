@@ -5,7 +5,7 @@ import { FileDown, Loader2, PlusCircle, Trash2 } from "lucide-react";
 
 import type { RecipeResponse } from "@/application/recipes/presenter";
 import type { IngredientResponse } from "@/application/ingredients/presenter";
-import { calculateProcurementAction } from "./actions";
+import { calculateHomeMetricsAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -24,7 +24,7 @@ import { toCsv } from "@/lib/csv";
 import { cn } from "@/lib/utils";
 import { convertQuantity, createQuantity, scaleQuantity } from "@/domain/shared/unit";
 
-interface ProcurementDashboardProps {
+interface HomeDashboardProps {
   recipes: RecipeResponse[];
   ingredients: IngredientResponse[];
 }
@@ -34,7 +34,7 @@ interface PlanItem {
   servings: number;
 }
 
-interface ProcurementTableItem {
+interface HomeTableItem {
   ingredientId: number;
   ingredientName: string;
   stockQuantityValue: number;
@@ -63,15 +63,15 @@ const chartPalette = [
   "#0F172A",
 ];
 
-export function ProcurementDashboard({
+export function HomeDashboard({
   recipes,
   ingredients,
-}: ProcurementDashboardProps) {
+}: HomeDashboardProps) {
   const [items, setItems] = React.useState<PlanItem[]>(
     recipes.length > 0 ? [{ recipeId: recipes[0]!.id, servings: 50 }] : []
   );
   const [result, setResult] = React.useState<Awaited<
-    ReturnType<typeof calculateProcurementAction>
+    ReturnType<typeof calculateHomeMetricsAction>
   > | null>(null);
   const [status, setStatus] = React.useState<CalculationState>("idle");
   const [error, setError] = React.useState<string | null>(null);
@@ -136,7 +136,7 @@ export function ProcurementDashboard({
           formData.append(`items.${index}.servings`, String(item.servings));
         });
 
-        const calculation = await calculateProcurementAction(formData);
+        const calculation = await calculateHomeMetricsAction(formData);
         if (requestRef.current === requestId) {
           setResult(calculation);
           setStatus("success");
@@ -155,7 +155,7 @@ export function ProcurementDashboard({
     };
   }, [items]);
 
-  const tableItems = React.useMemo<ProcurementTableItem[]>(() => {
+  const tableItems = React.useMemo<HomeTableItem[]>(() => {
     if (!result) {
       return [];
     }
@@ -462,7 +462,7 @@ export function ProcurementDashboard({
     link.href = url;
     link.setAttribute(
       "download",
-      `procurement-${new Date().toISOString().slice(0, 10)}.csv`
+      `home-dashboard-${new Date().toISOString().slice(0, 10)}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -502,7 +502,7 @@ export function ProcurementDashboard({
 
   const hasPlan = items.length > 0 && totalServings > 0;
 
-  const procurementChartData = React.useMemo(
+  const homeChartData = React.useMemo(
     () =>
       tableItems
         .slice()
@@ -719,7 +719,7 @@ export function ProcurementDashboard({
             </CardHeader>
             <CardContent>
               <BarChart
-                data={procurementChartData}
+                data={homeChartData}
                 valueFormatter={(value) => `${Math.round(value).toLocaleString()} 円`}
                 emptyLabel="調達計算の結果が表示されるとコストの内訳が確認できます。"
               />

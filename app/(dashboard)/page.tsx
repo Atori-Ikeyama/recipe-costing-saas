@@ -133,7 +133,7 @@ export default function HomePage() {
           </div>
           <div className="relative">
             <div className="absolute -inset-6 -z-10 rounded-[40px] bg-[#E85A4F]/15 blur-3xl" />
-            <div className="relative rounded-[32px] border border-[#E8E8E6] bg-white p-4 shadow-[0_30px_80px_-50px_rgba(79,157,105,0.45)]">
+            <div className="relative rounded-[32px] bg-white p-4">
               <Terminal />
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function HomePage() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="flex h-full flex-col gap-4 rounded-3xl border border-[#E8E8E6] bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#E85A4F]/50 hover:shadow-lg"
+              className="flex h-full flex-col gap-4 rounded-3xl bg-white p-8 transition-all duration-300 hover:-translate-y-1"
             >
               <feature.icon className="h-8 w-8 text-[#E85A4F]" />
               <h3 className="text-xl font-semibold">{feature.title}</h3>
@@ -167,7 +167,7 @@ export default function HomePage() {
       </section>
 
       <section className="px-6 py-20">
-        <div className="mx-auto grid max-w-6xl gap-14 rounded-[40px] border border-[#E8E8E6] bg-white px-8 py-14 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="mx-auto grid max-w-6xl gap-14 rounded-[40px] bg-white px-8 py-14 lg:grid-cols-[320px_minmax(0,1fr)]">
           <div className="space-y-4">
             <h2 className="text-3xl font-semibold sm:text-4xl">
               導入から運用まで、3つのステップ。
@@ -187,7 +187,7 @@ export default function HomePage() {
             {workflow.map((item, index) => (
               <div
                 key={item.step}
-                className="relative rounded-3xl border border-[#E8E8E6] bg-[#FAFAF9] p-8 shadow-sm"
+                className="relative rounded-3xl bg-[#FAFAF9] p-8"
               >
                 <div className="absolute -top-5 left-6 flex h-10 items-center rounded-full border border-[#E8E8E6] bg-white px-4 text-xs font-semibold tracking-[0.3em] text-[#E85A4F]">
                   {item.step}
@@ -208,7 +208,7 @@ export default function HomePage() {
       </section>
 
       <section className="px-6 pb-24">
-        <div className="mx-auto max-w-5xl rounded-[40px] border border-[#E8E8E6] bg-white px-10 py-16 text-center shadow-sm">
+        <div className="mx-auto max-w-5xl rounded-[40px] bg-white px-10 py-16 text-center">
           <h2 className="text-3xl font-semibold sm:text-4xl">
             無料プランから、安心して始められる。
           </h2>
@@ -245,4 +245,3 @@ export default function HomePage() {
     </main>
   );
 }
-

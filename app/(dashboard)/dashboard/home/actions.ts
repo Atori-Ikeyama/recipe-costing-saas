@@ -10,7 +10,7 @@ function toNumber(value: FormDataEntryValue | null): number {
   return Number(value);
 }
 
-export async function calculateProcurementAction(formData: FormData) {
+export async function calculateHomeMetricsAction(formData: FormData) {
   const itemCount = Number(formData.get('itemCount') ?? 0);
   const planItems: CalculateProcurementInput['planItems'] = [];
 

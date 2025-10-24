@@ -12,7 +12,7 @@ import {
   Menu,
   Carrot,
   UtensilsCrossed,
-  ShoppingCart,
+  Home as HomeIcon,
   Factory,
 } from "lucide-react";
 
@@ -25,11 +25,7 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navItems = [
-    {
-      href: "/dashboard",
-      icon: ShoppingCart,
-      label: "ホーム",
-    },
+    { href: "/dashboard", icon: HomeIcon, label: "ホーム" },
     { href: "/dashboard/ingredients", icon: Carrot, label: "材料" },
     { href: "/dashboard/suppliers", icon: Factory, label: "仕入先" },
     { href: "/dashboard/recipes", icon: UtensilsCrossed, label: "レシピ" },

@@ -1,15 +1,15 @@
 import { listRecipes } from '@/application/recipes';
 import { listIngredients } from '@/application/ingredients';
-import { ProcurementDashboard } from './view';
+import { HomeDashboard } from './view';
 
-export default async function ProcurementPage() {
+export default async function HomePage() {
   const [recipes, ingredients] = await Promise.all([
     listRecipes(),
     listIngredients(),
   ]);
 
   return (
-    <ProcurementDashboard
+    <HomeDashboard
       recipes={recipes}
       ingredients={ingredients}
     />
